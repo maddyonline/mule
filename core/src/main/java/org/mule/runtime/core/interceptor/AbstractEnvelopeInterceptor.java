@@ -6,16 +6,8 @@
  */
 package org.mule.runtime.core.interceptor;
 
-import static org.mule.runtime.core.DefaultMuleEvent.setCurrentEvent;
-import org.mule.runtime.core.DefaultMuleEvent;
-import org.mule.runtime.core.NonBlockingVoidMuleEvent;
-import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
-import org.mule.runtime.core.api.MuleMessage;
-import org.mule.runtime.core.api.MuleRuntimeException;
-import org.mule.runtime.core.api.connector.NonBlockingReplyToHandler;
-import org.mule.runtime.core.api.connector.ReplyToHandler;
 import org.mule.runtime.core.api.construct.FlowConstruct;
 import org.mule.runtime.core.api.construct.FlowConstructAware;
 import org.mule.runtime.core.api.interceptor.Interceptor;
@@ -47,7 +39,7 @@ public abstract class AbstractEnvelopeInterceptor extends AbstractRequestRespons
       throws MuleException;
 
   @Override
-  protected MuleEvent processBlocking(MuleEvent event) throws MuleException {
+  public MuleEvent process(MuleEvent event) throws MuleException {
     long startTime = System.currentTimeMillis();
     ProcessingTime time = event.getProcessingTime();
     boolean exceptionWasThrown = true;
@@ -61,70 +53,11 @@ public abstract class AbstractEnvelopeInterceptor extends AbstractRequestRespons
     return resultEvent;
   }
 
-  @Override
-  protected MuleEvent processNonBlocking(final MuleEvent event) throws MuleException {
-    final long startTime = System.currentTimeMillis();
-    final ProcessingTime time = event.getProcessingTime();
-    MuleEvent responseEvent = event;
-
-    final ReplyToHandler originalReplyToHandler = event.getReplyToHandler();
-    responseEvent = new DefaultMuleEvent(event, new ResponseReplyToHandler(originalReplyToHandler, time, startTime));
-    // Update RequestContext ThreadLocal for backwards compatibility
-    setCurrentEvent(responseEvent);
-
-    try {
-      responseEvent = processNext(processRequest(responseEvent));
-      if (!(responseEvent instanceof NonBlockingVoidMuleEvent)) {
-        responseEvent = processResponse(responseEvent, event);
-      }
-    } catch (Exception exception) {
-      last(responseEvent, time, startTime, true);
-      throw exception;
-    }
-    return responseEvent;
-  }
-
-  @Override
   public void setFlowConstruct(FlowConstruct flowConstruct) {
     this.flowConstruct = flowConstruct;
-  }
-
-  class ResponseReplyToHandler implements NonBlockingReplyToHandler {
-
-    private final ReplyToHandler originalReplyToHandler;
-    private final ProcessingTime time;
-    private final long startTime;
-
-    public ResponseReplyToHandler(ReplyToHandler originalReplyToHandler, ProcessingTime time, long startTime) {
-      this.originalReplyToHandler = originalReplyToHandler;
-      this.time = time;
-      this.startTime = startTime;
-    }
-
-    @Override
-    public void processReplyTo(final MuleEvent event, MuleMessage returnMessage, Object replyTo) throws MuleException {
-      MuleEvent response = event;
-      boolean exceptionWasThrown = true;
-      try {
-        response = after(event);
-        originalReplyToHandler.processReplyTo(response, null, replyTo);
-        exceptionWasThrown = false;
-      } finally {
-        last(response, time, startTime, false);
-      }
-    }
-
-    @Override
-    public void processExceptionReplyTo(MessagingException exception, Object replyTo) {
-      try {
-        originalReplyToHandler.processExceptionReplyTo(exception, replyTo);
-      } finally {
-        try {
-          last(exception.getEvent(), time, startTime, true);
-        } catch (MuleException muleException) {
-          throw new MuleRuntimeException(muleException);
-        }
-      }
+    if (next instanceof FlowConstructAware) {
+      ((FlowConstructAware) next).setFlowConstruct(flowConstruct);
     }
   }
+
 }

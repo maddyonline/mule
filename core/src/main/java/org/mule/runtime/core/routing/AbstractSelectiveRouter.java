@@ -6,6 +6,9 @@
  */
 package org.mule.runtime.core.routing;
 
+import static reactor.core.publisher.Flux.from;
+import static reactor.core.publisher.Flux.fromIterable;
+import static reactor.core.publisher.Flux.just;
 import org.mule.runtime.core.AbstractAnnotatedObject;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
@@ -39,9 +42,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.collections.ListUtils;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 
-public abstract class AbstractSelectiveRouter extends AbstractAnnotatedObject implements SelectiveRouter,
-    RouterStatisticsRecorder, Lifecycle, FlowConstructAware, MuleContextAware, MessageProcessorContainer {
+public abstract class AbstractSelectiveRouter extends AbstractAnnotatedObject
+    implements SelectiveRouter, RouterStatisticsRecorder, Lifecycle, FlowConstructAware, MuleContextAware,
+    MessageProcessorContainer {
 
   private final List<MessageProcessorFilterPair> conditionalMessageProcessors = new ArrayList<>();
   private MessageProcessor defaultProcessor;
@@ -61,6 +67,14 @@ public abstract class AbstractSelectiveRouter extends AbstractAnnotatedObject im
   @Override
   public void setFlowConstruct(FlowConstruct flowConstruct) {
     this.flowConstruct = flowConstruct;
+    for (MessageProcessorFilterPair pair : conditionalMessageProcessors) {
+      if (pair instanceof FlowConstructAware) {
+        pair.setFlowConstruct(flowConstruct);
+      }
+    }
+    if (defaultProcessor instanceof FlowConstructAware) {
+      ((FlowConstructAware) defaultProcessor).setFlowConstruct(flowConstruct);
+    }
   }
 
   @Override
@@ -147,8 +161,8 @@ public abstract class AbstractSelectiveRouter extends AbstractAnnotatedObject im
     updateRoute(processor, (RoutesUpdater) index -> {
       MessageProcessorFilterPair addedPair = new MessageProcessorFilterPair(processor, filter);
 
-      MessageProcessorFilterPair removedPair =
-          conditionalMessageProcessors.set(index, transitionLifecycleManagedObjectForAddition(addedPair));
+      MessageProcessorFilterPair removedPair = conditionalMessageProcessors.set(index,
+                                                                                transitionLifecycleManagedObjectForAddition(addedPair));
 
       transitionLifecycleManagedObjectForRemoval(removedPair);
     });
@@ -160,24 +174,38 @@ public abstract class AbstractSelectiveRouter extends AbstractAnnotatedObject im
   }
 
   @Override
+  public Publisher<MuleEvent> apply(Publisher<MuleEvent> publisher) {
+    return from(publisher).concatMap(event -> {
+      try {
+        return fromIterable(getProcessorsToRoute(event)).concatMap(mp -> just(event).as(mp)).collectList()
+            .map(list -> resultsHandler.aggregateResults(list, event));
+      } catch (RoutePathNotFoundException e) {
+        return Flux.error(e);
+      }
+    });
+  }
+
   public MuleEvent process(MuleEvent event) throws MuleException {
+    return routeWithProcessors(getProcessorsToRoute(event), event);
+  }
+
+  protected Collection<MessageProcessor> getProcessorsToRoute(MuleEvent event) throws RoutePathNotFoundException {
     Collection<MessageProcessor> selectedProcessors = selectProcessors(event);
-
     if (!selectedProcessors.isEmpty()) {
-      return routeWithProcessors(selectedProcessors, event);
-    }
+      return selectedProcessors;
+    } else if (defaultProcessor != null) {
+      return Collections.singleton(defaultProcessor);
+    } else {
+      if (getRouterStatistics() != null && getRouterStatistics().isEnabled()) {
+        getRouterStatistics().incrementNoRoutedMessage();
+      }
 
-    if (defaultProcessor != null) {
-      return routeWithProcessor(defaultProcessor, event);
+      throw new RoutePathNotFoundException(
+                                           MessageFactory
+                                               .createStaticMessage("Can't process message because no route has been found " +
+                                                   "matching any filter and no default route is defined"),
+                                           event, this);
     }
-
-    if (getRouterStatistics() != null && getRouterStatistics().isEnabled()) {
-      getRouterStatistics().incrementNoRoutedMessage();
-    }
-
-    throw new RoutePathNotFoundException(MessageFactory
-        .createStaticMessage("Can't process message because no route has been found matching any filter and no default route is defined"),
-                                         event, this);
   }
 
   /**
@@ -233,11 +261,8 @@ public abstract class AbstractSelectiveRouter extends AbstractAnnotatedObject im
     return managedObject;
   }
 
-  private MuleEvent routeWithProcessor(MessageProcessor processor, MuleEvent event) throws MuleException {
-    return routeWithProcessors(Collections.singleton(processor), event);
-  }
-
-  private MuleEvent routeWithProcessors(Collection<MessageProcessor> processors, MuleEvent event) throws MuleException {
+  private MuleEvent routeWithProcessors(Collection<MessageProcessor> processors, MuleEvent event)
+      throws MuleException {
     List<MuleEvent> results = new ArrayList<>();
 
     for (MessageProcessor processor : processors) {
@@ -247,7 +272,9 @@ public abstract class AbstractSelectiveRouter extends AbstractAnnotatedObject im
     return resultsHandler.aggregateResults(results, event);
   }
 
-  private void processEventWithProcessor(MuleEvent event, MessageProcessor processor, List<MuleEvent> results)
+  private void processEventWithProcessor(MuleEvent event,
+                                         MessageProcessor processor,
+                                         List<MuleEvent> results)
       throws MuleException {
     results.add(processor.process(event));
 

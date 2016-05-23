@@ -75,7 +75,7 @@ public abstract class AbstractAsyncRequestReplyRequester extends AbstractInterce
   protected ListableObjectStore store;
 
   @Override
-  public MuleEvent process(MuleEvent event) throws MuleException {
+  public final MuleEvent process(MuleEvent event) throws MuleException {
     if (replyMessageSource == null) {
       return processNext(event);
     } else {

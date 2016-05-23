@@ -6,14 +6,12 @@
  */
 package org.mule.runtime.core.exception;
 
-import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.VoidMuleEvent;
 import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleMessage;
-import org.mule.runtime.core.api.connector.NonBlockingReplyToHandler;
 import org.mule.runtime.core.api.construct.FlowConstruct;
 import org.mule.runtime.core.api.exception.MessagingExceptionHandler;
 import org.mule.runtime.core.api.exception.MessagingExceptionHandlerAcceptor;
@@ -57,16 +55,14 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
 
     @Override
     protected MuleEvent processRequest(MuleEvent request) throws MuleException {
-      if (!handleException && request.getReplyToHandler() instanceof NonBlockingReplyToHandler) {
-        request = new DefaultMuleEvent(request, request.getFlowConstruct(), null, null, true);
-      }
       muleContext.getNotificationManager()
           .fireNotification(new ExceptionStrategyNotification(request, ExceptionStrategyNotification.PROCESS_START));
       fireNotification(exception);
       logException(exception, request);
       processStatistics(request);
-      request
-          .setMessage(MuleMessage.builder(request.getMessage()).exceptionPayload(new DefaultExceptionPayload(exception)).build());
+      request.setMessage(MuleMessage.builder(request.getMessage())
+          .exceptionPayload(new DefaultExceptionPayload(exception))
+          .build());
 
       markExceptionAsHandledIfRequired(exception);
       return beforeRouting(exception, request);
@@ -77,11 +73,7 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
       processOutboundRouterStatistics(flowConstruct);
       response = afterRouting(exception, response);
       if (response != null && !VoidMuleEvent.getInstance().equals(response)) {
-        // Only process reply-to if non-blocking is not enabled. Checking the exchange pattern is not sufficient
-        // because JMS inbound endpoints for example use a REQUEST_RESPONSE exchange pattern and async processing.
-        if (!(request.isAllowNonBlocking() && request.getReplyToHandler() instanceof NonBlockingReplyToHandler)) {
-          processReplyTo(response, exception);
-        }
+        processReplyTo(response, exception);
         closeStream(response.getMessage());
         nullifyExceptionPayloadIfRequired(response);
       }
@@ -103,7 +95,9 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
         // Do nothing
       }
 
-      event.setMessage(MuleMessage.builder(event.getMessage()).exceptionPayload(new DefaultExceptionPayload(exception)).build());
+      event.setMessage(MuleMessage.builder(event.getMessage())
+          .exceptionPayload(new DefaultExceptionPayload(exception))
+          .build());
       return event;
     }
 
@@ -136,7 +130,9 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
 
   protected void nullifyExceptionPayloadIfRequired(MuleEvent event) {
     if (this.handleException) {
-      event.setMessage(MuleMessage.builder(event.getMessage()).exceptionPayload(null).build());
+      event.setMessage(MuleMessage.builder(event.getMessage())
+          .exceptionPayload(null)
+          .build());
     }
   }
 
@@ -150,7 +146,9 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
   protected MuleEvent route(MuleEvent event, Exception t) {
     if (!getMessageProcessors().isEmpty()) {
       try {
-        event.setMessage(MuleMessage.builder(event.getMessage()).exceptionPayload(new DefaultExceptionPayload(t)).build());
+        event.setMessage(MuleMessage.builder(event.getMessage())
+            .exceptionPayload(new DefaultExceptionPayload(t))
+            .build());
         MuleEvent result = configuredMessageProcessors.process(event);
         return result;
       } catch (Exception e) {

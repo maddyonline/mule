@@ -14,7 +14,6 @@ import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleMessage;
-import org.mule.runtime.core.api.NonBlockingSupported;
 import org.mule.runtime.core.api.lifecycle.Initialisable;
 import org.mule.runtime.core.api.lifecycle.InitialisationException;
 import org.mule.runtime.core.api.processor.MessageProcessor;
@@ -49,7 +48,7 @@ import org.w3c.dom.Document;
  * <p/>
  * The {@link MuleEvent} sent to the next message processor is the same that arrived to foreach.
  */
-public class Foreach extends AbstractMessageProcessorOwner implements Initialisable, MessageProcessor, NonBlockingSupported {
+public class Foreach extends AbstractMessageProcessorOwner implements Initialisable, MessageProcessor {
 
   public static final String ROOT_MESSAGE_PROPERTY = "rootMessage";
   public static final String COUNTER_PROPERTY = "counter";
@@ -71,7 +70,9 @@ public class Foreach extends AbstractMessageProcessorOwner implements Initialisa
 
   @Override
   public MuleEvent process(MuleEvent event) throws MuleException {
-    String parentMessageProp = rootMessageVariableName != null ? rootMessageVariableName : ROOT_MESSAGE_PROPERTY;
+    String parentMessageProp = rootMessageVariableName != null
+        ? rootMessageVariableName
+        : ROOT_MESSAGE_PROPERTY;
     Object previousCounterVar = null;
     Object previousRootMessageVar = null;
     if (event.getFlowVariableNames().contains(counterVariableName)) {
@@ -112,7 +113,8 @@ public class Foreach extends AbstractMessageProcessorOwner implements Initialisa
     try {
       ownedMessageProcessor.process(event);
     } catch (MessagingException e) {
-      if (splitter.equals(e.getFailingMessageProcessor()) || filter.equals(e.getFailingMessageProcessor())) {
+      if (splitter.equals(e.getFailingMessageProcessor())
+          || filter.equals(e.getFailingMessageProcessor())) {
         // Make sure the context information for the exception is relative to the ForEach.
         e.getInfo().remove(INFO_LOCATION_KEY);
         throw new MessagingException(event, e, this);
@@ -176,7 +178,8 @@ public class Foreach extends AbstractMessageProcessorOwner implements Initialisa
     messageProcessorInitialized = true;
 
     try {
-      this.ownedMessageProcessor = new DefaultMessageProcessorChainBuilder().chain(messageProcessors).build();
+      this.ownedMessageProcessor = new DefaultMessageProcessorChainBuilder().chain(messageProcessors)
+          .build();
     } catch (MuleException e) {
       throw new InitialisationException(e, this);
     }
@@ -184,7 +187,8 @@ public class Foreach extends AbstractMessageProcessorOwner implements Initialisa
   }
 
   private boolean isXPathExpression(String expression) {
-    return expression.matches("^xpath\\(.+\\)$") || expression.matches("^xpath3\\(.+\\)$");
+    return expression.matches("^xpath\\(.+\\)$") ||
+        expression.matches("^xpath3\\(.+\\)$");
   }
 
   public void setCollectionExpression(String expression) {

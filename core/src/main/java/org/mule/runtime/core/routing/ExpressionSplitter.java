@@ -12,6 +12,7 @@ import org.mule.runtime.core.api.MuleMessage;
 import org.mule.runtime.core.api.expression.ExpressionManager;
 import org.mule.runtime.core.api.lifecycle.Initialisable;
 import org.mule.runtime.core.api.lifecycle.InitialisationException;
+import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.expression.ExpressionConfig;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.reactivestreams.Publisher;
 import org.w3c.dom.NodeList;
 
 /**
@@ -30,7 +32,8 @@ import org.w3c.dom.NodeList;
  * <p>
  * <b>EIP Reference:</b> <a href="http://www.eaipatterns.com/Sequencer.html">http://www.eaipatterns.com/Sequencer.html</a>
  */
-public class ExpressionSplitter extends AbstractSplitter implements Initialisable {
+public class ExpressionSplitter extends AbstractSplitter
+    implements Initialisable, MessageProcessor {
 
   protected ExpressionManager expressionManager;
   protected ExpressionConfig config = new ExpressionConfig();
@@ -51,7 +54,9 @@ public class ExpressionSplitter extends AbstractSplitter implements Initialisabl
 
   @Override
   protected List<MuleEvent> splitMessage(MuleEvent event) {
-    Object result = event.getMuleContext().getExpressionManager().evaluate(config.getFullExpression(expressionManager), event);
+    Object result = event.getMuleContext()
+        .getExpressionManager()
+        .evaluate(config.getFullExpression(expressionManager), event);
     if (result instanceof Object[]) {
       result = Arrays.asList((Object[]) result);
     }

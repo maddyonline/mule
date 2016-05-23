@@ -10,13 +10,11 @@ import static org.mule.runtime.core.DefaultMuleEvent.setCurrentEvent;
 import static org.mule.runtime.core.api.config.MuleProperties.MULE_DISABLE_TRANSPORT_TRANSFORMER_PROPERTY;
 import static org.mule.runtime.core.api.config.MuleProperties.MULE_REMOTE_SYNC_PROPERTY;
 import static org.mule.runtime.core.util.SystemUtils.getDefaultEncoding;
-
 import org.mule.compatibility.core.api.endpoint.OutboundEndpoint;
 import org.mule.compatibility.core.api.transport.MessageDispatcher;
 import org.mule.runtime.api.execution.CompletionHandler;
 import org.mule.runtime.api.execution.ExceptionCallback;
 import org.mule.runtime.core.DefaultMuleEvent;
-import org.mule.runtime.core.NonBlockingVoidMuleEvent;
 import org.mule.runtime.core.VoidMuleEvent;
 import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleEvent;
@@ -83,17 +81,8 @@ public abstract class AbstractMessageDispatcher extends AbstractTransportMessage
               .createStaticMessage("Timeout waiting for mule context to be completely started"), event, this);
         }
 
-        if (isNonBlocking(event)) {
-          doSendNonBlocking(event, new NonBlockingSendCompletionHandler(event, ((Flow) event.getFlowConstruct()).getWorkManager(),
-                                                                        connector));
-          // Update RequestContext ThreadLocal for backwards compatibility. Clear event as we are done with
-          // this
-          // thread.
-          setCurrentEvent(null);
-          return NonBlockingVoidMuleEvent.getInstance();
-        } else {
-          return createResponseEvent(doSend(event), event);
-        }
+        MuleMessage resultMessage = doSend(event);
+        return createResponseEvent(resultMessage, event);
       } else {
         doDispatch(event);
         return VoidMuleEvent.getInstance();

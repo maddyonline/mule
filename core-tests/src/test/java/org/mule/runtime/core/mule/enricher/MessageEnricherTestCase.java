@@ -9,10 +9,8 @@ package org.mule.runtime.core.mule.enricher;
 import static java.nio.charset.StandardCharsets.UTF_16;
 import static junit.framework.Assert.assertSame;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -21,17 +19,16 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mule.runtime.api.metadata.MediaType.JSON;
-import static org.mule.runtime.core.DefaultMuleEvent.getCurrentEvent;
 
+import static reactor.core.publisher.Mono.from;
+import static reactor.core.publisher.Mono.just;
 import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.MessageExchangePattern;
-import org.mule.runtime.core.NonBlockingVoidMuleEvent;
 import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleMessage;
-import org.mule.runtime.core.api.connector.ReplyToHandler;
 import org.mule.runtime.core.config.i18n.CoreMessages;
 import org.mule.runtime.core.construct.Flow;
 import org.mule.runtime.core.enricher.MessageEnricher;
@@ -39,11 +36,8 @@ import org.mule.runtime.core.enricher.MessageEnricher.EnrichExpressionPair;
 import org.mule.runtime.core.processor.chain.DefaultMessageProcessorChain;
 import org.mule.runtime.core.processor.strategy.NonBlockingProcessingStrategy;
 import org.mule.tck.SensingNullMessageProcessor;
-import org.mule.tck.SensingNullReplyToHandler;
 import org.mule.tck.junit4.AbstractMuleContextTestCase;
 import org.mule.tck.junit4.matcher.DataTypeMatcher;
-
-import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
@@ -138,7 +132,6 @@ public class MessageEnricherTestCase extends AbstractMuleContextTestCase {
     } catch (MessagingException e) {
       assertThat(e.getMessage(), is("Expected."));
     }
-    assertThat(getCurrentEvent().getReplyToHandler(), nullValue());
   }
 
   @Test
@@ -306,19 +299,16 @@ public class MessageEnricherTestCase extends AbstractMuleContextTestCase {
 
   @Test
   public void enricherConservesSameEventInstanceNonBlockingTargetNonBlocking() throws Exception {
+    MessageEnricher enricher = new MessageEnricher();
+    enricher.setMuleContext(muleContext);
+    enricher.addEnrichExpressionPair(new EnrichExpressionPair("#[sessionVars['foo']]"));
     SensingNullMessageProcessor sensingNullMessageProcessor = new SensingNullMessageProcessor();
-    MessageEnricher enricher = createNonBlockingEnricher(sensingNullMessageProcessor);
-    SensingNullReplyToHandler nullReplyToHandler = new SensingNullReplyToHandler();
-    final MuleEvent in = createNonBlockingEvent(nullReplyToHandler);
+    enricher.setEnrichmentMessageProcessor(sensingNullMessageProcessor);
 
+    MuleEvent in = createNonBlockingEvent();
     MuleEvent out = processEnricherInChain(enricher, in);
 
-    nullReplyToHandler.latch.await(RECEIVE_TIMEOUT, TimeUnit.MILLISECONDS);
-
-    assertThat(sensingNullMessageProcessor.event.getMessage(), sameInstance(in.getMessage()));
-
-    assertThat(out, is(instanceOf(NonBlockingVoidMuleEvent.class)));
-    assertThat(nullReplyToHandler.event.getMessage(), is(sameInstance(in.getMessage())));
+    assertThat(out.getMessage(), is(sameInstance(in.getMessage())));
   }
 
   @Test
@@ -332,13 +322,11 @@ public class MessageEnricherTestCase extends AbstractMuleContextTestCase {
     };
     MessageEnricher enricher = createNonBlockingEnricher(sensingNullMessageProcessor);
 
-    SensingNullReplyToHandler nullReplyToHandler = new SensingNullReplyToHandler();
-    final MuleEvent in = createNonBlockingEvent(nullReplyToHandler);
+    final MuleEvent in = createNonBlockingEvent();
 
-    MuleEvent out = processEnricherInChain(enricher, in);
+    processEnricherNonBlocking(enricher, in);
 
     assertThat(sensingNullMessageProcessor.event.getMessage(), sameInstance(in.getMessage()));
-    assertThat(out.getMessage(), is(sameInstance(in.getMessage())));
   }
 
   @Test
@@ -351,23 +339,20 @@ public class MessageEnricherTestCase extends AbstractMuleContextTestCase {
     });
 
     try {
-      SensingNullReplyToHandler nullReplyToHandler = new SensingNullReplyToHandler();
-      enricher.process(createNonBlockingEvent(nullReplyToHandler));
+      enricher.process(createNonBlockingEvent());
       fail("Expected a MessagingException");
     } catch (MessagingException e) {
       assertThat(e.getMessage(), is("Expected."));
     }
-    assertThat(getCurrentEvent().getReplyToHandler(), instanceOf(ReplyToHandler.class));
   }
 
-  private MuleEvent createNonBlockingEvent(SensingNullReplyToHandler nullReplyToHandler) {
+  private MuleEvent createNonBlockingEvent() {
     Flow flow = mock(Flow.class);
     when(flow.getProcessingStrategy()).thenReturn(new NonBlockingProcessingStrategy());
     when(flow.getMuleContext()).thenReturn(muleContext);
 
     return new DefaultMuleEvent(MuleMessage.builder().payload(TEST_MESSAGE).build(),
-                                MessageExchangePattern.REQUEST_RESPONSE, nullReplyToHandler,
-                                flow);
+                                MessageExchangePattern.REQUEST_RESPONSE, null, flow);
   }
 
   private MessageEnricher createNonBlockingEnricher(SensingNullMessageProcessor sensingNullMessageProcessor) {
@@ -383,6 +368,10 @@ public class MessageEnricherTestCase extends AbstractMuleContextTestCase {
       assertThat(event.getMessage(), is(sameInstance(in.getMessage())));
       return event;
     }).process(in);
+  }
+
+  private MuleEvent processEnricherNonBlocking(MessageEnricher enricher, final MuleEvent in) throws MuleException {
+    return from(just(in).as(enricher)).block();
   }
 
   private void doEnrichDataTypePropagationTest(EnrichExpressionPair pair) throws Exception {

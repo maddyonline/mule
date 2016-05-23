@@ -8,7 +8,6 @@ package org.mule.runtime.core.routing.outbound;
 
 import static org.mule.runtime.core.DefaultMuleEvent.setCurrentEvent;
 import static org.mule.runtime.core.routing.CorrelationMode.NEVER;
-
 import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.VoidMuleEvent;
 import org.mule.runtime.core.api.MuleContext;
@@ -152,4 +151,5 @@ public abstract class AbstractMessageSequenceSplitter extends AbstractIntercepti
   public void setCounterVariableName(String counterVariableName) {
     this.counterVariableName = counterVariableName;
   }
+
 }

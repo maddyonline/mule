@@ -11,7 +11,6 @@ import static org.mule.runtime.core.api.config.MuleProperties.MULE_CORRELATION_I
 import static org.mule.runtime.core.api.config.MuleProperties.MULE_CORRELATION_SEQUENCE_PROPERTY;
 import static org.mule.runtime.core.api.config.MuleProperties.MULE_REPLY_TO_PROPERTY;
 import static org.mule.runtime.module.cxf.MuleSoapHeaders.MULE_HEADER;
-import org.mule.runtime.core.NonBlockingVoidMuleEvent;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.module.cxf.CxfConstants;
 import org.mule.runtime.module.cxf.MuleSoapHeaders;
@@ -45,7 +44,7 @@ public class MuleHeadersOutInterceptor extends AbstractMuleHeaderInterceptor {
     SoapMessage message = (SoapMessage) m;
     MuleEvent event = (MuleEvent) message.getExchange().get(CxfConstants.MULE_EVENT);
 
-    if (event == null || event instanceof NonBlockingVoidMuleEvent) {
+    if (event == null) {
       return;
     }
 
@@ -62,14 +61,16 @@ public class MuleHeadersOutInterceptor extends AbstractMuleHeaderInterceptor {
     mule_header.setAttribute("xmlns:mule", MULE_NS_URI);
 
     if (muleHeaders.getCorrelationId() != null) {
-      mule_header.appendChild(buildMuleHeader(owner_doc, MULE_CORRELATION_ID_PROPERTY, muleHeaders.getCorrelationId()));
-      mule_header
-          .appendChild(buildMuleHeader(owner_doc, MULE_CORRELATION_GROUP_SIZE_PROPERTY, muleHeaders.getCorrelationGroup()));
-      mule_header
-          .appendChild(buildMuleHeader(owner_doc, MULE_CORRELATION_SEQUENCE_PROPERTY, muleHeaders.getCorrelationSequence()));
+      mule_header.appendChild(buildMuleHeader(owner_doc, MULE_CORRELATION_ID_PROPERTY,
+                                              muleHeaders.getCorrelationId()));
+      mule_header.appendChild(buildMuleHeader(owner_doc, MULE_CORRELATION_GROUP_SIZE_PROPERTY,
+                                              muleHeaders.getCorrelationGroup()));
+      mule_header.appendChild(buildMuleHeader(owner_doc, MULE_CORRELATION_SEQUENCE_PROPERTY,
+                                              muleHeaders.getCorrelationSequence()));
     }
     if (muleHeaders.getReplyTo() != null) {
-      mule_header.appendChild(buildMuleHeader(owner_doc, MULE_REPLY_TO_PROPERTY, muleHeaders.getReplyTo()));
+      mule_header.appendChild(buildMuleHeader(owner_doc, MULE_REPLY_TO_PROPERTY,
+                                              muleHeaders.getReplyTo()));
     }
 
     SoapHeader sh = new SoapHeader(new QName(MULE_NS_URI, MULE_HEADER), mule_header);

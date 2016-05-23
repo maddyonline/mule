@@ -110,8 +110,8 @@ public class MessageFilter extends AbstractFilteringMessageProcessor implements 
 
   @Override
   public String toString() {
-    return (filter == null ? "null filter" : filter.getClass().getName()) + " (wrapped by " + this.getClass().getSimpleName()
-        + ")";
+    return (filter == null ? "null filter" : filter.getClass().getName()) + " (wrapped by "
+        + this.getClass().getSimpleName() + ")";
   }
 
   @Override
@@ -124,6 +124,7 @@ public class MessageFilter extends AbstractFilteringMessageProcessor implements 
 
   @Override
   public void setFlowConstruct(FlowConstruct flowConstruct) {
+    super.setFlowConstruct(flowConstruct);
     if (!onUnacceptedFlowConstruct && unacceptedMessageProcessor instanceof FlowConstructAware) {
       ((FlowConstructAware) unacceptedMessageProcessor).setFlowConstruct(flowConstruct);
     }

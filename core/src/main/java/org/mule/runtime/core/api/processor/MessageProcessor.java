@@ -8,21 +8,63 @@ package org.mule.runtime.core.api.processor;
 
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
+import org.mule.runtime.core.util.rx.FluxNullSafeMap;
+import org.reactivestreams.Publisher;
+
+import java.util.function.Function;
+
+import static org.mule.runtime.core.util.rx.Exceptions.checkedFunction;
 
 /**
- * Processes {@link MuleEvent}'s. Implementations that do not mutate the {@link MuleEvent} or pass it on to another
- * MessageProcessor should return the MuleEvent they receive.
- * 
+ * Processes {@link MuleEvent}'s.
+ * <p>
+ * This interface defines both a traditional blocking API as present since Mule 3.0 along with a new
+ * <a href="http://www.reactive-streams.org/">Reactive Streams<a/> based non-blocking API incorporated in Mule 4.0. In Mule 4.0
+ * the implementation of {@link #process(MuleEvent)} is required with the default implementation of {@link #apply(Publisher)}
+ * defined in this interface to delegate to {@link #process(MuleEvent)}. As such simple implementations that do no IO or routing,
+ * can continue to just implement {@link #process(MuleEvent)} and require no changes and with only more complex processors such as
+ * routers and these doing IO or waiting on the current thread needing to implement {@link #apply(Publisher)} to take advantage of
+ * non-blocking processing strategies.
+ *
  * @since 3.0
  */
-public interface MessageProcessor {
+public interface MessageProcessor extends Function<Publisher<MuleEvent>, Publisher<MuleEvent>> {
 
   /**
    * Invokes the MessageProcessor.
-   * 
+   *
    * @param event MuleEvent to be processed
    * @return optional response MuleEvent
    * @throws MuleException
    */
   MuleEvent process(MuleEvent event) throws MuleException;
+
+  /**
+   * Applies a {@link Publisher<MuleEvent>} function transforming a stream of {@link MuleEvent}'s.
+   * <p>
+   * The default implementation delegates to {@link #process(MuleEvent)} and will i) propagte any exception thrown ii) drop events
+   * if invocation of {@link #process(MuleEvent)} returns null.
+   *
+   * @param publisher the event stream to transform
+   * @return the transformed event stream
+   */
+  @Override
+  default Publisher<MuleEvent> apply(Publisher<MuleEvent> publisher) {
+    return new FluxNullSafeMap<>(publisher, checkedFunction(event -> process(event)));
+  }
+
+  /**
+   * Defined if this processor may or will block either due to IO operations in the current thread or waiting using
+   * {@link Thread#sleep(long)} or other mechanism for waiting on the current thread.
+   * <p>
+   * The default implementation is <code>false</code>, it is expected that blocking implementation override this method and return
+   * <code>true</code>. Blocking implementations may be scheduled to execute on a different thread dependingon the
+   * {@link ProcessingStrategy}.
+   *
+   * @return true is this implementation may block // TODO REPLACE WITH ENUM TO SUPPORT IO/CPU/NONE and not just boolean
+   */
+  default boolean isBlocking() {
+    return false;
+  }
+
 }

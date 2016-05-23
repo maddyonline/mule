@@ -9,16 +9,13 @@ package org.mule.runtime.module.cxf;
 import static java.util.Arrays.asList;
 import static org.mule.runtime.core.util.IOUtils.toDataHandler;
 import static org.mule.runtime.module.http.api.HttpConstants.ResponseProperties.HTTP_STATUS_PROPERTY;
-
 import org.mule.runtime.api.message.MultiPartPayload;
 import org.mule.runtime.api.metadata.MediaType;
-import org.mule.runtime.core.NonBlockingVoidMuleEvent;
 import org.mule.runtime.core.VoidMuleEvent;
 import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleMessage;
-import org.mule.runtime.core.api.NonBlockingSupported;
 import org.mule.runtime.core.api.config.MuleProperties;
 import org.mule.runtime.core.api.connector.DispatchException;
 import org.mule.runtime.core.api.processor.CloneableMessageProcessor;
@@ -46,7 +43,6 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Holder;
 
 import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.endpoint.ClientCallback;
 import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.frontend.MethodDispatcher;
 import org.apache.cxf.interceptor.Fault;
@@ -59,8 +55,7 @@ import org.apache.cxf.ws.addressing.WSAContextUtils;
  * The CxfOutboundMessageProcessor performs outbound CXF processing, sending an event through the CXF client, then on to the next
  * MessageProcessor.
  */
-public class CxfOutboundMessageProcessor extends AbstractInterceptingMessageProcessor
-    implements CloneableMessageProcessor, NonBlockingSupported {
+public class CxfOutboundMessageProcessor extends AbstractInterceptingMessageProcessor implements CloneableMessageProcessor {
 
   private CxfPayloadToArguments payloadToArguments = CxfPayloadToArguments.NULL_PAYLOAD_AS_PARAMETER;
   private Client client;
@@ -120,7 +115,6 @@ public class CxfOutboundMessageProcessor extends AbstractInterceptingMessageProc
     return args;
   }
 
-  @Override
   public MuleEvent process(MuleEvent event) throws MuleException {
     try {
       MuleEvent res;
@@ -230,28 +224,8 @@ public class CxfOutboundMessageProcessor extends AbstractInterceptingMessageProc
     // mule will close the stream so don't let cxf, otherwise cxf will close it too early
     exchange.put(StaxInEndingInterceptor.STAX_IN_NOCLOSE, Boolean.TRUE);
 
-    if (event.isAllowNonBlocking() && event.getReplyToHandler() != null) {
-      client.invoke(new ClientCallback() {
-
-        @Override
-        public void handleResponse(Map<String, Object> ctx, Object[] res) {
-          try {
-            event.getReplyToHandler().processReplyTo(buildResponseMessage(event, responseHolder.value, res), null, null);
-          } catch (MuleException ex) {
-            handleException(ctx, ex);
-          }
-        }
-
-        @Override
-        public void handleException(Map<String, Object> ctx, Throwable ex) {
-          event.getReplyToHandler().processExceptionReplyTo(wrapException(responseHolder.value, ex), null);
-        }
-      }, bop, getArgs(event), ctx, exchange);
-      return NonBlockingVoidMuleEvent.getInstance();
-    } else {
-      Object[] response = client.invoke(bop, getArgs(event), ctx, exchange);
-      return buildResponseMessage(event, responseHolder.value, response);
-    }
+    Object[] response = client.invoke(bop, getArgs(event), ctx, exchange);
+    return buildResponseMessage(event, responseHolder.value, response);
   }
 
   public Method getMethod(MuleEvent event) throws Exception {
@@ -303,7 +277,8 @@ public class CxfOutboundMessageProcessor extends AbstractInterceptingMessageProc
    * with method name does not work - thus the work around.
    * </p>
    */
-  protected BindingOperationInfo tryToGetTheOperationInDotNetNamingConvention(Endpoint ep, final String opName) {
+  protected BindingOperationInfo tryToGetTheOperationInDotNetNamingConvention(Endpoint ep,
+                                                                              final String opName) {
     final String capitalizedOpName = opName.substring(0, 1).toUpperCase() + opName.substring(1);
     return getBindingOperationFromEndpoint(ep, capitalizedOpName);
   }
@@ -316,7 +291,9 @@ public class CxfOutboundMessageProcessor extends AbstractInterceptingMessageProc
 
   private Method getMethodFromOperation(String op) throws Exception {
     BindingOperationInfo bop = getOperation(op);
-    MethodDispatcher md = (MethodDispatcher) client.getEndpoint().getService().get(MethodDispatcher.class.getName());
+    MethodDispatcher md = (MethodDispatcher) client.getEndpoint()
+        .getService()
+        .get(MethodDispatcher.class.getName());
     return md.getMethod(bop);
   }
 

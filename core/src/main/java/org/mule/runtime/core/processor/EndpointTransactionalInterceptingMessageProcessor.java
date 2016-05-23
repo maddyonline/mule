@@ -9,7 +9,6 @@ package org.mule.runtime.core.processor;
 import org.mule.runtime.core.api.DefaultMuleException;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
-import org.mule.runtime.core.api.NonBlockingSupported;
 import org.mule.runtime.core.api.execution.ExecutionCallback;
 import org.mule.runtime.core.api.execution.ExecutionTemplate;
 import org.mule.runtime.core.api.processor.MessageProcessor;
@@ -21,8 +20,7 @@ import org.mule.runtime.core.execution.TransactionalExecutionTemplate;
  * Wraps the invocation of the next {@link MessageProcessor} with a transaction. If the {@link TransactionConfig} is null then no
  * transaction is used and the next {@link MessageProcessor} is invoked directly.
  */
-public class EndpointTransactionalInterceptingMessageProcessor extends AbstractInterceptingMessageProcessor
-    implements NonBlockingSupported {
+public class EndpointTransactionalInterceptingMessageProcessor extends AbstractInterceptingMessageProcessor {
 
   protected TransactionConfig transactionConfig;
 
@@ -50,7 +48,9 @@ public class EndpointTransactionalInterceptingMessageProcessor extends AbstractI
       } catch (MuleException e) {
         throw e;
       } catch (Exception e) {
-        throw new DefaultMuleException(CoreMessages.errorInvokingMessageProcessorWithinTransaction(next, transactionConfig), e);
+        throw new DefaultMuleException(CoreMessages.errorInvokingMessageProcessorWithinTransaction(
+                                                                                                   next, transactionConfig),
+                                       e);
       }
     }
   }

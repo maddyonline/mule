@@ -6,6 +6,8 @@
  */
 package org.mule.runtime.module.extension.internal.runtime.source;
 
+import static reactor.core.publisher.Mono.from;
+import static reactor.core.publisher.Mono.just;
 import org.mule.runtime.api.execution.CompletionHandler;
 import org.mule.runtime.api.message.MuleEvent;
 import org.mule.runtime.core.api.MessagingException;
@@ -14,13 +16,16 @@ import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.execution.AsyncResponseFlowProcessingPhaseTemplate;
 import org.mule.runtime.core.execution.ResponseCompletionCallback;
 
+import org.reactivestreams.Publisher;
+
 final class ExtensionFlowProcessingTemplate implements AsyncResponseFlowProcessingPhaseTemplate {
 
   private final MuleEvent event;
   private final MessageProcessor messageProcessor;
   private final CompletionHandler<MuleEvent, MessagingException, MuleEvent> completionHandler;
 
-  ExtensionFlowProcessingTemplate(MuleEvent event, MessageProcessor messageProcessor,
+  ExtensionFlowProcessingTemplate(MuleEvent event,
+                                  MessageProcessor messageProcessor,
                                   CompletionHandler<MuleEvent, MessagingException, MuleEvent> completionHandler) {
     this.event = event;
     this.messageProcessor = messageProcessor;
@@ -35,6 +40,11 @@ final class ExtensionFlowProcessingTemplate implements AsyncResponseFlowProcessi
   @Override
   public org.mule.runtime.core.api.MuleEvent routeEvent(org.mule.runtime.core.api.MuleEvent muleEvent) throws MuleException {
     return messageProcessor.process(muleEvent);
+  }
+
+  @Override
+  public Publisher<org.mule.runtime.core.api.MuleEvent> routeEventAsStream(org.mule.runtime.core.api.MuleEvent muleEvent) {
+    return from(just(muleEvent).as(messageProcessor));
   }
 
   @Override

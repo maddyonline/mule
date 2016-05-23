@@ -24,7 +24,6 @@ import org.mule.runtime.core.api.DefaultMuleException;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleMessage;
-import org.mule.runtime.core.api.NonBlockingSupported;
 import org.mule.runtime.core.api.config.MuleProperties;
 import org.mule.runtime.core.api.lifecycle.Initialisable;
 import org.mule.runtime.core.api.lifecycle.InitialisationException;
@@ -49,7 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HttpResponseBuilder extends AbstractMessageProcessorOwner
-    implements Initialisable, MessageProcessor, NonBlockingSupported {
+    implements Initialisable, MessageProcessor {
 
   private static final Logger logger = LoggerFactory.getLogger(HttpResponseBuilder.class);
 
@@ -171,12 +170,14 @@ public class HttpResponseBuilder extends AbstractMessageProcessorOwner
   private void addMultiValueCookie(HttpResponse response, Cookie[] cookies) {
     Cookie[] arrayOfCookies = CookieHelper.asArrayOfCookies(cookies);
     for (Cookie cookie : arrayOfCookies) {
-      response.addHeader(new Header(HttpConstants.HEADER_COOKIE_SET, CookieHelper.formatCookieForASetCookieHeader(cookie)));
+      response.addHeader(new Header(HttpConstants.HEADER_COOKIE_SET,
+                                    CookieHelper.formatCookieForASetCookieHeader(cookie)));
     }
   }
 
   private boolean isMultiValueCookie(String headerName, Object headerValue) {
-    return HttpConstants.HEADER_COOKIE_SET.equals(headerName) && headerValue instanceof Cookie[];
+    return HttpConstants.HEADER_COOKIE_SET.equals(headerName)
+        && headerValue instanceof Cookie[];
   }
 
   private HttpResponse getHttpResponse(MuleMessage message) {

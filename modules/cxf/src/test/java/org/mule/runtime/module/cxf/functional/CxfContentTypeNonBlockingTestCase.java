@@ -17,14 +17,21 @@ import org.mule.runtime.core.api.client.MuleClient;
 import org.mule.tck.SensingNullRequestResponseMessageProcessor;
 import org.mule.tck.junit4.rule.DynamicPort;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
 public class CxfContentTypeNonBlockingTestCase extends FunctionalTestCase {
 
-  private static final String requestPayload = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"\n"
-      + "           xmlns:hi=\"http://example.cxf.module.runtime.mule.org/\">\n" + "<soap:Body>\n" + "<hi:sayHi>\n"
-      + "    <arg0>Hello</arg0>\n" + "</hi:sayHi>\n" + "</soap:Body>\n" + "</soap:Envelope>";
+  private static final String requestPayload =
+      "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+          "           xmlns:hi=\"http://example.cxf.module.runtime.mule.org/\">\n" +
+          "<soap:Body>\n" +
+          "<hi:sayHi>\n" +
+          "    <arg0>Hello</arg0>\n" +
+          "</hi:sayHi>\n" +
+          "</soap:Body>\n" +
+          "</soap:Envelope>";
 
   @Rule
   public DynamicPort dynamicPort = new DynamicPort("port1");
@@ -35,6 +42,7 @@ public class CxfContentTypeNonBlockingTestCase extends FunctionalTestCase {
   }
 
   @Test
+  @Ignore("RX")
   public void testCxfService() throws Exception {
     MuleMessage request = MuleMessage.builder().payload(requestPayload).build();
     MuleClient client = muleContext.getClient();
@@ -46,6 +54,7 @@ public class CxfContentTypeNonBlockingTestCase extends FunctionalTestCase {
   }
 
   @Test
+  @Ignore("RX")
   public void testCxfClient() throws Exception {
     MuleMessage request = MuleMessage.builder().payload("hello").build();
     MuleClient client = muleContext.getClient();
@@ -58,6 +67,7 @@ public class CxfContentTypeNonBlockingTestCase extends FunctionalTestCase {
   }
 
   @Test
+  @Ignore("RX")
   public void testCxfClientProxy() throws Exception {
     MuleMessage request = MuleMessage.builder().payload("hello").build();
     MuleClient client = muleContext.getClient();

@@ -6,11 +6,14 @@
  */
 package org.mule.runtime.core.processor;
 
+import static reactor.core.publisher.Flux.from;
 import org.mule.runtime.core.AbstractAnnotatedObject;
 import org.mule.runtime.core.VoidMuleEvent;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
+import org.mule.runtime.core.api.construct.FlowConstruct;
+import org.mule.runtime.core.api.construct.FlowConstructAware;
 import org.mule.runtime.core.api.context.MuleContextAware;
 import org.mule.runtime.core.api.processor.InternalMessageProcessor;
 import org.mule.runtime.core.api.processor.MessageProcessor;
@@ -22,6 +25,7 @@ import org.mule.runtime.core.util.ObjectUtils;
 
 import java.util.Arrays;
 
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,11 +35,12 @@ import org.slf4j.LoggerFactory;
  * of setNext and holds the next message processor as an attribute.
  */
 public abstract class AbstractInterceptingMessageProcessorBase extends AbstractAnnotatedObject
-    implements MessageProcessor, MuleContextAware, MessageProcessorContainer {
+    implements MessageProcessor, MuleContextAware, MessageProcessorContainer, FlowConstructAware {
 
   protected Logger logger = LoggerFactory.getLogger(getClass());
 
   protected MuleContext muleContext;
+  protected FlowConstruct flowConstruct;
 
   public void setMuleContext(MuleContext context) {
     this.muleContext = context;
@@ -56,15 +61,14 @@ public abstract class AbstractInterceptingMessageProcessorBase extends AbstractA
       return event;
     } else if (event == null) {
       if (logger.isDebugEnabled()) {
-        logger.trace("MuleEvent is null.  Next MessageProcessor '" + next.getClass().getName() + "' will not be invoked.");
+        logger.trace("MuleEvent is null.  Next MessageProcessor '" + next.getClass().getName()
+            + "' will not be invoked.");
       }
       return null;
     } else if (VoidMuleEvent.getInstance().equals(event)) {
       return event;
     } else {
-      if (logger.isTraceEnabled()) {
-        logger.trace("Invoking next MessageProcessor: '" + next.getClass().getName() + "' ");
-      }
+      logNextMessageProcessorInvocation();
       return next.process(event);
     }
   }
@@ -94,4 +98,26 @@ public abstract class AbstractInterceptingMessageProcessorBase extends AbstractA
       NotificationUtils.addMessageProcessorPathElements(Arrays.asList(next), pathElement.getParent());
     }
   }
+
+  @Override
+  public void setFlowConstruct(FlowConstruct flowConstruct) {
+    this.flowConstruct = flowConstruct;
+    if (next instanceof FlowConstructAware) {
+      ((FlowConstructAware) next).setFlowConstruct(flowConstruct);
+    }
+  }
+
+  protected Publisher<MuleEvent> applyNext(Publisher<MuleEvent> publisher) {
+    if (next == null) {
+      return publisher;
+    }
+    return from(publisher).doOnNext(event -> logNextMessageProcessorInvocation()).transform(next);
+  }
+
+  private void logNextMessageProcessorInvocation() {
+    if (logger.isTraceEnabled()) {
+      logger.trace("Invoking next MessageProcessor: '" + next.getClass().getName() + "' ");
+    }
+  }
+
 }

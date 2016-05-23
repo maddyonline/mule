@@ -26,6 +26,7 @@ import java.io.InputStream;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.custommonkey.xmlunit.XMLUnit;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -56,6 +57,7 @@ public class CxfBackToBlockingTestCase extends FunctionalTestCase {
   }
 
   @Test
+  @Ignore("RX")
   public void backToBlocking() throws Exception {
     MuleClient client = muleContext.getClient();
     InputStream xml = getClass().getResourceAsStream("/direct/direct-request.xml");
@@ -68,6 +70,7 @@ public class CxfBackToBlockingTestCase extends FunctionalTestCase {
   }
 
   @Test
+  @Ignore("RX")
   public void backToBlockingWsdl() throws Exception {
     MuleClient client = muleContext.getClient();
     MuleMessage result = client.send("http://localhost:" + dynamicPort.getNumber() + "/services/Echo" + "?wsdl",

@@ -6,6 +6,10 @@
  */
 package org.mule.runtime.core.processor;
 
+import static reactor.core.publisher.Flux.just;
+import org.mule.runtime.core.DefaultMuleEvent;
+import org.mule.runtime.core.VoidMuleEvent;
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.construct.FlowConstruct;
@@ -18,13 +22,12 @@ import org.mule.runtime.core.api.lifecycle.Lifecycle;
 import org.mule.runtime.core.api.lifecycle.Startable;
 import org.mule.runtime.core.api.lifecycle.Stoppable;
 import org.mule.runtime.core.api.processor.MessageProcessor;
-import org.mule.runtime.core.execution.MessageProcessorExecutionTemplate;
+import org.mule.runtime.core.processor.chain.DefaultMessageProcessorChain;
 
-import java.util.Collections;
-import java.util.List;
+import org.reactivestreams.Publisher;
 
-public class ResponseMessageProcessorAdapter extends AbstractRequestResponseMessageProcessor
-    implements Lifecycle, FlowConstructAware {
+public class ResponseMessageProcessorAdapter extends AbstractRequestResponseMessageProcessor implements Lifecycle,
+    FlowConstructAware {
 
   protected MessageProcessor responseProcessor;
   protected FlowConstruct flowConstruct;
@@ -35,7 +38,7 @@ public class ResponseMessageProcessorAdapter extends AbstractRequestResponseMess
 
   public ResponseMessageProcessorAdapter(MessageProcessor responseProcessor) {
     super();
-    this.responseProcessor = responseProcessor;
+    this.responseProcessor = DefaultMessageProcessorChain.from(responseProcessor);
   }
 
   public void setProcessor(MessageProcessor processor) {
@@ -43,37 +46,35 @@ public class ResponseMessageProcessorAdapter extends AbstractRequestResponseMess
   }
 
   @Override
-  protected MuleEvent processResponse(MuleEvent response, final MuleEvent request) throws MuleException {
+  protected Publisher<MuleEvent> processResponseAsStream(MuleEvent response, MuleEvent request) {
     if (responseProcessor == null || !isEventValid(response)) {
-      return response;
+      return just(response);
     } else {
-      return new CopyOnNullNonBlockingProcessorExecutor(response, Collections.singletonList(responseProcessor),
-                                                        MessageProcessorExecutionTemplate.createExecutionTemplate(), true)
-                                                            .execute();
+      return just(response).transform(responseProcessor);
     }
   }
 
-  class CopyOnNullNonBlockingProcessorExecutor extends NonBlockingProcessorExecutor {
-
-    public CopyOnNullNonBlockingProcessorExecutor(MuleEvent event, List<MessageProcessor> processors,
-                                                  MessageProcessorExecutionTemplate executionTemplate, boolean copyOnVoidEvent) {
-      super(event, processors, executionTemplate, copyOnVoidEvent);
-    }
-
-    @Override
-    protected boolean isUseEventCopy(MuleEvent result) {
-      return super.isUseEventCopy(result) || result == null;
+  @Override
+  protected MuleEvent processResponse(MuleEvent response) throws MuleException {
+    if (responseProcessor == null || !isEventValid(response)) {
+      return response;
+    } else {
+      MuleEvent copy = new DefaultMuleEvent(response.getMessage(), response);
+      MuleEvent result = responseProcessor.process(response);
+      if (result == null || VoidMuleEvent.getInstance().equals(result)) {
+        // If <response> returns null then it acts as an implicit branch like in flows, the different
+        // here is that what's next, it's not another message processor that follows this one in the
+        // configuration file but rather the response phase of the inbound endpoint, or optionally
+        // other response processing on the way back to the inbound endpoint.
+        return copy;
+      } else {
+        return result;
+      }
     }
   }
 
   @Override
   public void initialise() throws InitialisationException {
-    if (responseProcessor instanceof MuleContextAware) {
-      ((MuleContextAware) responseProcessor).setMuleContext(muleContext);
-    }
-    if (responseProcessor instanceof FlowConstructAware) {
-      ((FlowConstructAware) responseProcessor).setFlowConstruct(flowConstruct);
-    }
     if (responseProcessor instanceof Initialisable) {
       ((Initialisable) responseProcessor).initialise();
     }
@@ -102,7 +103,17 @@ public class ResponseMessageProcessorAdapter extends AbstractRequestResponseMess
 
   @Override
   public void setFlowConstruct(FlowConstruct flowConstruct) {
-    this.flowConstruct = flowConstruct;
+    super.setFlowConstruct(flowConstruct);
+    if (responseProcessor instanceof FlowConstructAware) {
+      ((FlowConstructAware) responseProcessor).setFlowConstruct(flowConstruct);
+    }
   }
 
+  @Override
+  public void setMuleContext(MuleContext context) {
+    super.setMuleContext(context);
+    if (responseProcessor instanceof MuleContextAware) {
+      ((MuleContextAware) responseProcessor).setMuleContext(muleContext);
+    }
+  }
 }

@@ -34,7 +34,6 @@ import org.mule.runtime.core.config.i18n.MessageFactory;
 import org.mule.runtime.core.message.DefaultMultiPartPayload;
 import org.mule.runtime.core.message.PartAttributes;
 import org.mule.runtime.core.processor.AbstractRequestResponseMessageProcessor;
-import org.mule.runtime.core.processor.NonBlockingMessageProcessor;
 import org.mule.runtime.core.processor.chain.DefaultMessageProcessorChainBuilder;
 import org.mule.runtime.core.util.Base64;
 import org.mule.runtime.core.util.IOUtils;
@@ -80,7 +79,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
 
-public class WSConsumer implements MessageProcessor, Initialisable, MuleContextAware, Disposable, NonBlockingMessageProcessor {
+public class WSConsumer implements MessageProcessor, Initialisable, MuleContextAware, Disposable {
 
   public static final String SOAP_HEADERS_PROPERTY_PREFIX = "soap.";
 
@@ -123,9 +122,8 @@ public class WSConsumer implements MessageProcessor, Initialisable, MuleContextA
       try {
         config = muleContext.getRegistry().lookupObject(WSConsumerConfig.class);
         if (config == null) {
-          throw new InitialisationException(CoreMessages
-              .createStaticMessage("No configuration defined for the web service " + "consumer. Add a consumer-config element."),
-                                            this);
+          throw new InitialisationException(CoreMessages.createStaticMessage("No configuration defined for the web service " +
+              "consumer. Add a consumer-config element."), this);
         }
       } catch (RegistrationException e) {
         throw new InitialisationException(e, this);
@@ -187,11 +185,12 @@ public class WSConsumer implements MessageProcessor, Initialisable, MuleContextA
           if (e.getCause() instanceof SoapFault) {
             SoapFault soapFault = (SoapFault) e.getCause();
 
-            event.setMessage(MuleMessage.builder(event.getMessage())
-                .payload(soapFault.getDetail() != null ? soapFault.getDetail() : null).build());
+            event.setMessage(MuleMessage.builder(event.getMessage()).payload(soapFault.getDetail() != null ? soapFault.getDetail()
+                : null)
+                .build());
 
-            throw new SoapFaultException(event, soapFault.getFaultCode(), soapFault.getSubCode(), soapFault.getMessage(),
-                                         soapFault.getDetail(), this);
+            throw new SoapFaultException(event, soapFault.getFaultCode(), soapFault.getSubCode(),
+                                         soapFault.getMessage(), soapFault.getDetail(), this);
           } else {
             throw e;
           }
@@ -434,8 +433,11 @@ public class WSConsumer implements MessageProcessor, Initialisable, MuleContextA
 
       if (!attachments.isEmpty()) {
         List<org.mule.runtime.api.message.MuleMessage> parts = new ArrayList<>();
-        parts.add(MuleMessage.builder().payload(message.getPayload()).mediaType(message.getDataType().getMediaType())
-            .attributes(BODY_ATTRIBUTES).build());
+        parts.add(MuleMessage.builder()
+            .payload(message.getPayload())
+            .mediaType(message.getDataType().getMediaType())
+            .attributes(BODY_ATTRIBUTES)
+            .build());
 
         for (Attachment attachment : attachments) {
           Map<String, LinkedList<String>> headers = new HashMap<>();
@@ -445,9 +447,11 @@ public class WSConsumer implements MessageProcessor, Initialisable, MuleContextA
           }
 
           try {
-            parts.add(MuleMessage.builder().payload(attachment.getDataHandler().getInputStream())
+            parts.add(MuleMessage.builder()
+                .payload(attachment.getDataHandler().getInputStream())
                 .mediaType(MediaType.parse(attachment.getDataHandler().getContentType()))
-                .attributes(new PartAttributes(attachment.getId())).build());
+                .attributes(new PartAttributes(attachment.getId()))
+                .build());
           } catch (Exception e) {
             throw new MessagingException(CoreMessages.createStaticMessage("Could not set inbound attachment %s",
                                                                           attachment.getId()),

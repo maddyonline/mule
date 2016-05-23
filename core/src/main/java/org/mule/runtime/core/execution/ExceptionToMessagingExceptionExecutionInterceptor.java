@@ -33,8 +33,8 @@ public class ExceptionToMessagingExceptionExecutionInterceptor implements Messag
     }
   }
 
-  private MessagingException putContext(MessagingException messagingException, MessageProcessor failingMessageProcessor,
-                                        MuleEvent event) {
+  public static MessagingException putContext(MessagingException messagingException, MessageProcessor failingMessageProcessor,
+                                              MuleEvent event) {
     for (ExceptionContextProvider exceptionContextProvider : event.getMuleContext().getExceptionContextProviders()) {
       for (Entry<String, Object> contextInfoEntry : exceptionContextProvider.getContextInfo(event, failingMessageProcessor)
           .entrySet()) {

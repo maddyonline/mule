@@ -49,9 +49,10 @@ import java.util.Set;
 public class ReflectionEntryPointResolver extends AbstractEntryPointResolver {
 
   // we don't want to match these methods when looking for a service method
-  private Set<String> ignoredMethods =
-      new HashSet<String>(Arrays.asList("equals", "getInvocationHandler", "set*", "toString", "getClass", "notify", "notifyAll",
-                                        "wait", "hashCode", "clone", "is*", "get*"));
+  private Set<String> ignoredMethods = new HashSet<String>(Arrays.asList("equals",
+                                                                         "getInvocationHandler", "set*", "toString",
+                                                                         "getClass", "notify", "notifyAll", "wait", "hashCode",
+                                                                         "clone", "is*", "get*", "apply"));
 
   protected WildcardFilter filter;
 
@@ -112,8 +113,8 @@ public class ReflectionEntryPointResolver extends AbstractEntryPointResolver {
     Class<?>[] types = ClassUtils.getClassTypes(payload);
 
     // do any methods on the service accept a context?
-    List<Method> methods =
-        ClassUtils.getSatisfiableMethods(component.getClass(), types, isAcceptVoidMethods(), false, ignoredMethods, filter);
+    List<Method> methods = ClassUtils.getSatisfiableMethods(component.getClass(), types,
+                                                            isAcceptVoidMethods(), false, ignoredMethods, filter);
 
     int numMethods = methods.size();
     if (numMethods > 1) {
@@ -126,8 +127,8 @@ public class ReflectionEntryPointResolver extends AbstractEntryPointResolver {
       // found exact match for method with context argument
       method = this.addMethodByArguments(component, methods.get(0), payload);
     } else {
-      methods =
-          ClassUtils.getSatisfiableMethods(component.getClass(), ClassUtils.getClassTypes(payload), true, true, ignoredMethods);
+      methods = ClassUtils.getSatisfiableMethods(component.getClass(),
+                                                 ClassUtils.getClassTypes(payload), true, true, ignoredMethods);
 
       numMethods = methods.size();
 

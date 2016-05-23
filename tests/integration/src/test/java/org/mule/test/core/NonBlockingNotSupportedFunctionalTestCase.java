@@ -51,21 +51,6 @@ public class NonBlockingNotSupportedFunctionalTestCase extends AbstractIntegrati
   }
 
   @Test
-  public void all() throws Exception {
-    flowRunner("all").withPayload(TEST_MESSAGE).nonBlocking().run();
-  }
-
-  @Test
-  public void firstSuccessful() throws Exception {
-    flowRunner("firstSuccessful").withPayload(TEST_MESSAGE).nonBlocking().run();
-  }
-
-  @Test
-  public void roundRobin() throws Exception {
-    flowRunner("roundRobin").withPayload(TEST_MESSAGE).nonBlocking().run();
-  }
-
-  @Test
   public void requestReply() throws Exception {
     flowRunner("requestReply").withPayload(TEST_MESSAGE).nonBlocking().run();
   }
@@ -76,18 +61,29 @@ public class NonBlockingNotSupportedFunctionalTestCase extends AbstractIntegrati
     int correlationGroupSize = 3;
 
     FlowRunner runner = flowRunner("aggregator").withPayload(TEST_MESSAGE).nonBlocking();
-    MuleMessage message1 = MuleMessage.builder(runner.buildEvent().getMessage()).correlationId(correlationId)
-        .correlationGroupSize(correlationGroupSize).correlationSequence(1).build();
+    MuleMessage message1 = MuleMessage.builder(runner.buildEvent().getMessage())
+        .correlationId(correlationId)
+        .correlationGroupSize(correlationGroupSize)
+        .correlationSequence(1)
+        .build();
     runner.runNoVerify();
 
     runner.reset();
-    MuleMessage message2 = MuleMessage.builder(runner.buildEvent().getMessage()).correlationId(correlationId)
-        .correlationGroupSize(correlationGroupSize).correlationSequence(2).rootId(message1.getMessageRootId()).build();
+    MuleMessage message2 = MuleMessage.builder(runner.buildEvent().getMessage())
+        .correlationId(correlationId)
+        .correlationGroupSize(correlationGroupSize)
+        .correlationSequence(2)
+        .rootId(message1.getMessageRootId())
+        .build();
     runner.runNoVerify();
 
     runner.reset();
-    MuleMessage message3 = MuleMessage.builder(runner.buildEvent().getMessage()).correlationId(correlationId)
-        .correlationGroupSize(correlationGroupSize).correlationSequence(3).rootId(message1.getMessageRootId()).build();
+    MuleMessage message3 = MuleMessage.builder(runner.buildEvent().getMessage())
+        .correlationId(correlationId)
+        .correlationGroupSize(correlationGroupSize)
+        .correlationSequence(3)
+        .rootId(message1.getMessageRootId())
+        .build();
     runner.run();
   }
 
@@ -121,6 +117,17 @@ public class NonBlockingNotSupportedFunctionalTestCase extends AbstractIntegrati
   public void catchRollbackExceptionStrategy() throws Exception {
     flowRunner("catchRollbackExceptionStrategy").withPayload(TEST_MESSAGE).nonBlocking().run();
     verify("rollbackExceptionStrategyChild");
+  }
+
+  @Test
+  public void foreach() throws Exception {
+    flowRunner("foreach").withPayload(TEST_MESSAGE).nonBlocking().run();
+
+  }
+
+  @Test
+  public void wiretap() throws Exception {
+    flowRunner("wiretap").withPayload(TEST_MESSAGE).nonBlocking().run();
   }
 
 }

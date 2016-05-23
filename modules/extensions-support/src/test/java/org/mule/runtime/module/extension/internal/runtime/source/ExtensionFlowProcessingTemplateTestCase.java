@@ -14,6 +14,7 @@ import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mule.runtime.api.execution.CompletionHandler;
 import org.mule.runtime.api.execution.ExceptionCallback;
 import org.mule.runtime.core.DefaultMuleEvent;
@@ -28,7 +29,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+import org.reactivestreams.Publisher;
 
 @SmallTest
 @RunWith(MockitoJUnitRunner.class)
@@ -70,6 +74,19 @@ public class ExtensionFlowProcessingTemplateTestCase extends AbstractMuleTestCas
   public void routeEvent() throws Exception {
     template.routeEvent(event);
     verify(messageProcessor).process(event);
+  }
+
+  @Test
+  public void routeEventAsStream() {
+    when(messageProcessor.apply(any(Publisher.class))).thenAnswer(new Answer<Publisher>() {
+
+      @Override
+      public Publisher answer(InvocationOnMock invocation) throws Throwable {
+        return (Publisher) invocation.getArguments()[0];
+      }
+    });
+    template.routeEventAsStream(event);
+    verify(messageProcessor).apply(any(Publisher.class));
   }
 
   @Test

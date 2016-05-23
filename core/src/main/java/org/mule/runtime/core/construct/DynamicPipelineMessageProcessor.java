@@ -6,9 +6,10 @@
  */
 package org.mule.runtime.core.construct;
 
-import org.mule.runtime.core.api.NonBlockingSupported;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
+import org.mule.runtime.core.api.construct.FlowConstruct;
+import org.mule.runtime.core.api.construct.FlowConstructAware;
 import org.mule.runtime.core.api.lifecycle.Lifecycle;
 import org.mule.runtime.core.api.processor.DynamicPipeline;
 import org.mule.runtime.core.api.processor.DynamicPipelineBuilder;
@@ -28,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.reactivestreams.Publisher;
+
 /**
  * Experimental implementation that supports a single dynamic pipeline due to restrictions imposed by intercepting message
  * processors and their lifecycle.
@@ -35,7 +38,7 @@ import java.util.List;
  * If more than one client tries to use the functionality the 2nd one will fail due to pipeline ID verification.
  */
 public class DynamicPipelineMessageProcessor extends AbstractInterceptingMessageProcessor
-    implements DynamicPipeline, NonBlockingSupported {
+    implements DynamicPipeline, FlowConstructAware {
 
   private String pipelineId;
   private AbstractMessageProcessorChain preChain;
@@ -50,6 +53,11 @@ public class DynamicPipelineMessageProcessor extends AbstractInterceptingMessage
   @Override
   public MuleEvent process(MuleEvent event) throws MuleException {
     return processNext(event);
+  }
+
+  @Override
+  public Publisher<MuleEvent> apply(Publisher<MuleEvent> publisher) {
+    return applyNext(publisher);
   }
 
   @Override
@@ -135,6 +143,13 @@ public class DynamicPipelineMessageProcessor extends AbstractInterceptingMessage
   public DynamicPipelineBuilder dynamicPipeline(String id) throws DynamicPipelineException {
     checkPipelineId(id);
     return new Builder();
+  }
+
+  @Override
+  public void setFlowConstruct(FlowConstruct flowConstruct) {
+    if (staticChain instanceof FlowConstructAware) {
+      ((FlowConstructAware) staticChain).setFlowConstruct(flowConstruct);
+    }
   }
 
   private class Builder implements DynamicPipelineBuilder {

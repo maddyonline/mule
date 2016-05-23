@@ -31,7 +31,8 @@ import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.initialiseIfNee
 import static org.mule.runtime.module.extension.internal.util.ExtensionsTestUtils.mockClassLoaderModelProperty;
 import static org.mule.tck.MuleTestUtils.spyInjector;
 import static org.mule.test.heisenberg.extension.exception.HeisenbergConnectionExceptionEnricher.ENRICHED_MESSAGE;
-
+import static reactor.core.publisher.Mono.error;
+import static reactor.core.publisher.Mono.justOrEmpty;
 import org.mule.runtime.api.connection.ConnectionException;
 import org.mule.runtime.api.execution.CompletionHandler;
 import org.mule.runtime.api.execution.ExceptionCallback;
@@ -85,6 +86,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExtensionMessageSourceTestCase extends AbstractMuleContextTestCase {
@@ -180,6 +183,17 @@ public class ExtensionMessageSourceTestCase extends AbstractMuleContextTestCase 
       return null;
     }).when(workManager).scheduleWork(any(Work.class));
 
+    doAnswer(invocation -> {
+      Publisher<MuleEvent> publisher = (Publisher) invocation.getArguments()[0];
+      return Mono.from(publisher).map(event -> {
+        try {
+          return justOrEmpty(messageProcessor.process(event));
+        } catch (MuleException e) {
+          return error(e);
+        }
+      });
+    }).when(messageProcessor).apply(any(Publisher.class));
+
     messageSource.initialise();
     messageSource.start();
 
@@ -255,7 +269,10 @@ public class ExtensionMessageSourceTestCase extends AbstractMuleContextTestCase 
   @Test
   public void failWithConnectionExceptionWhenStartingAndGetsReconnected() throws Exception {
     doThrow(new RuntimeException(new ConnectionException(ERROR_MESSAGE)))
-        .doThrow(new RuntimeException(new ConnectionException(ERROR_MESSAGE))).doNothing().when(source).start();
+        .doThrow(new RuntimeException(new ConnectionException(ERROR_MESSAGE)))
+        .doNothing()
+        .when(source)
+        .start();
 
     messageSource.initialise();
     messageSource.start();
@@ -361,7 +378,8 @@ public class ExtensionMessageSourceTestCase extends AbstractMuleContextTestCase 
       @Override
       public boolean matches(Object item) {
         Exception exception = (Exception) item;
-        return exception.getCause() instanceof MuleException && exception.getCause().getCause() == e;
+        return exception.getCause() instanceof MuleException &&
+            exception.getCause().getCause() == e;
       }
 
       @Override

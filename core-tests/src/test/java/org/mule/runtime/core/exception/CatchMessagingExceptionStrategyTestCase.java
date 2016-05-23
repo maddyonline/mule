@@ -18,8 +18,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
-import static org.mule.runtime.core.MessageExchangePattern.REQUEST_RESPONSE;
-
 import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.api.DefaultMuleException;
 import org.mule.runtime.core.api.MuleContext;
@@ -29,11 +27,7 @@ import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.api.transaction.Transaction;
 import org.mule.runtime.core.api.transaction.TransactionException;
 import org.mule.runtime.core.api.util.StreamCloserService;
-import org.mule.runtime.core.construct.Flow;
-import org.mule.runtime.core.processor.strategy.NonBlockingProcessingStrategy;
 import org.mule.runtime.core.transaction.TransactionCoordination;
-import org.mule.tck.MuleTestUtils;
-import org.mule.tck.SensingNullReplyToHandler;
 import org.mule.tck.junit4.AbstractMuleContextTestCase;
 import org.mule.tck.testmodels.mule.TestTransaction;
 
@@ -117,9 +111,10 @@ public class CatchMessagingExceptionStrategyTestCase extends AbstractMuleContext
   @Test
   public void testHandleExceptionWithMessageProcessorsChangingEvent() throws Exception {
     MuleEvent lastEventCreated = new DefaultMuleEvent(muleMessage, getTestFlow());
-    catchMessagingExceptionStrategy
-        .setMessageProcessors(asList(createChagingEventMessageProcessor(new DefaultMuleEvent(muleMessage, getTestFlow())),
-                                     createChagingEventMessageProcessor(lastEventCreated)));
+    catchMessagingExceptionStrategy.setMessageProcessors(
+                                                         asList(createChagingEventMessageProcessor(new DefaultMuleEvent(muleMessage,
+                                                                                                                        getTestFlow())),
+                                                                createChagingEventMessageProcessor(lastEventCreated)));
     catchMessagingExceptionStrategy.initialise();
     MuleEvent exceptionHandlingResult = catchMessagingExceptionStrategy.handleException(mockException, mockMuleEvent);
     assertThat(exceptionHandlingResult.getId(), is(lastEventCreated.getId()));
@@ -136,22 +131,16 @@ public class CatchMessagingExceptionStrategyTestCase extends AbstractMuleContext
     mockMuleEvent = spy(mockMuleEvent);
 
     MuleEvent lastEventCreated = new DefaultMuleEvent(muleMessage, getTestFlow());
-    catchMessagingExceptionStrategy
-        .setMessageProcessors(asList(createFailingEventMessageProcessor(new DefaultMuleEvent(muleMessage, getTestFlow())),
-                                     createFailingEventMessageProcessor(lastEventCreated)));
+    catchMessagingExceptionStrategy.setMessageProcessors(
+                                                         asList(createFailingEventMessageProcessor(new DefaultMuleEvent(muleMessage,
+                                                                                                                        getTestFlow())),
+                                                                createFailingEventMessageProcessor(lastEventCreated)));
     catchMessagingExceptionStrategy.initialise();
 
     when(mockMuleEvent.getMessage().toString()).thenThrow(new RuntimeException("MuleMessage.toString() should not be called"));
 
     MuleEvent exceptionHandlingResult =
         exceptionHandlingResult = catchMessagingExceptionStrategy.handleException(mockException, mockMuleEvent);
-  }
-
-  private MuleEvent createNonBlockingTestEvent() throws Exception {
-    Flow flow = MuleTestUtils.getTestFlow(muleContext);
-    flow.setProcessingStrategy(new NonBlockingProcessingStrategy());
-    return new DefaultMuleEvent(MuleMessage.builder().payload(TEST_MESSAGE).build(), REQUEST_RESPONSE,
-                                new SensingNullReplyToHandler(), flow);
   }
 
   private MessageProcessor createChagingEventMessageProcessor(final MuleEvent lastEventCreated) {

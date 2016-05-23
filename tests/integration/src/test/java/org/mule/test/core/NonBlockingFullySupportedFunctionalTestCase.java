@@ -11,20 +11,15 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mule.functional.functional.FlowAssert.verify;
-import org.mule.test.AbstractIntegrationTestCase;
 import org.mule.functional.junit4.runners.RunnerDelegateTo;
 import org.mule.runtime.core.MessageExchangePattern;
-import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleEvent;
-import org.mule.runtime.core.api.context.MuleContextBuilder;
-import org.mule.runtime.core.api.processor.ProcessingStrategy;
-import org.mule.runtime.core.config.DefaultMuleConfiguration;
-import org.mule.runtime.core.construct.flow.DefaultFlowProcessingStrategy;
-import org.mule.runtime.core.processor.strategy.NonBlockingProcessingStrategy;
+import org.mule.test.AbstractIntegrationTestCase;
 
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -33,32 +28,30 @@ import org.junit.runners.Parameterized.Parameters;
 public class NonBlockingFullySupportedFunctionalTestCase extends AbstractIntegrationTestCase {
 
   public static String FOO = "foo";
-  private ProcessingStrategy processingStrategy;
+  private MessageExchangePattern exchangePattern;
 
   @Override
   protected String getConfigFile() {
     return "non-blocking-fully-supported-test-config.xml";
   }
 
-  public NonBlockingFullySupportedFunctionalTestCase(ProcessingStrategy processingStrategy) {
-    this.processingStrategy = processingStrategy;
+  public NonBlockingFullySupportedFunctionalTestCase(MessageExchangePattern exchangePattern) {
+    this.exchangePattern = exchangePattern;
   }
 
   @Parameters
   public static Collection<Object[]> parameters() {
-    return Arrays.asList(new Object[][] {{new DefaultFlowProcessingStrategy()}, {new NonBlockingProcessingStrategy()}});
-  }
-
-  @Override
-  protected void configureMuleContext(MuleContextBuilder contextBuilder) {
-    DefaultMuleConfiguration configuration = new DefaultMuleConfiguration();
-    configuration.setDefaultProcessingStrategy(processingStrategy);
-    contextBuilder.setMuleConfiguration(configuration);
+    return Arrays.asList(new Object[][] {
+        {MessageExchangePattern.REQUEST_RESPONSE},
+        {MessageExchangePattern.ONE_WAY}});
   }
 
   @Test
   public void flow() throws Exception {
-    flowRunner("flow").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking().run();
+    flowRunner("flow").withPayload(TEST_MESSAGE)
+        .withExchangePattern(getMessageExchnagePattern())
+        .nonBlocking()
+        .run();
   }
 
   @Test
@@ -68,7 +61,8 @@ public class NonBlockingFullySupportedFunctionalTestCase extends AbstractIntegra
 
   @Test
   public void childFlow() throws Exception {
-    flowRunner("childFlow").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking().run();
+    flowRunner("childFlow").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern())
+        .nonBlocking().run();
   }
 
   @Test
@@ -83,7 +77,6 @@ public class NonBlockingFullySupportedFunctionalTestCase extends AbstractIntegra
     verify("childSyncFlowChild");
   }
 
-  @Test(expected = MessagingException.class)
   public void childAsyncFlow() throws Exception {
     flowRunner("childAsyncFlow").withPayload(TEST_MESSAGE).nonBlocking().withExchangePattern(getMessageExchnagePattern()).run();
     verify("childAsyncFlowChild");
@@ -91,12 +84,14 @@ public class NonBlockingFullySupportedFunctionalTestCase extends AbstractIntegra
 
   @Test
   public void processorChain() throws Exception {
-    flowRunner("processorChain").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking().run();
+    flowRunner("processorChain").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern())
+        .nonBlocking().run();
   }
 
   @Test
   public void filterAccepts() throws Exception {
-    flowRunner("filterAccepts").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking().run();
+    flowRunner("filterAccepts").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern())
+        .nonBlocking().run();
   }
 
   @Test
@@ -141,17 +136,20 @@ public class NonBlockingFullySupportedFunctionalTestCase extends AbstractIntegra
 
   @Test
   public void securityFilter() throws Exception {
-    flowRunner("security-filter").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking().run();
+    flowRunner("security-filter").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern())
+        .nonBlocking().run();
   }
 
   @Test
   public void transformer() throws Exception {
-    flowRunner("transformer").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking().run();
+    flowRunner("transformer").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern())
+        .nonBlocking().run();
   }
 
   @Test
   public void choice() throws Exception {
-    flowRunner("choice").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking().run();
+    flowRunner("choice").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking()
+        .run();
   }
 
   @Test
@@ -194,18 +192,35 @@ public class NonBlockingFullySupportedFunctionalTestCase extends AbstractIntegra
 
   @Test
   public void async() throws Exception {
-    flowRunner("async").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking().run();
+    flowRunner("async").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking()
+        .run();
   }
 
   @Test
+  @Ignore("RX")
   public void catchExceptionStrategy() throws Exception {
     flowRunner("catchExceptionStrategy").withPayload(TEST_MESSAGE).withExchangePattern(getMessageExchnagePattern()).nonBlocking()
         .run();
     verify("catchExceptionStrategyChild");
   }
 
-  protected MessageExchangePattern getMessageExchnagePattern() {
-    return MessageExchangePattern.REQUEST_RESPONSE;
+  @Test
+  public void firstSuccessful() throws Exception {
+    flowRunner("firstSuccessful").withPayload(TEST_MESSAGE).nonBlocking().run();
+  }
+
+  @Test
+  public void roundRobin() throws Exception {
+    flowRunner("roundRobin").withPayload(TEST_MESSAGE).nonBlocking().run();
+  }
+
+  @Test
+  public void all() throws Exception {
+    flowRunner("all").withPayload(TEST_MESSAGE).nonBlocking().run();
+  }
+
+  private MessageExchangePattern getMessageExchnagePattern() {
+    return exchangePattern;
   }
 }
 

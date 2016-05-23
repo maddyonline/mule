@@ -17,6 +17,7 @@ import org.mule.tck.SensingNullRequestResponseMessageProcessor;
 import org.mule.functional.junit4.FunctionalTestCase;
 import org.mule.tck.junit4.rule.DynamicPort;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -25,16 +26,20 @@ public class ProxyNonBlockingTestCase extends FunctionalTestCase {
   private static final HttpRequestOptions HTTP_REQUEST_OPTIONS =
       newOptions().method(POST.name()).disableStatusCodeValidation().build();
 
-  private static final String ECHO_SOAP_REQUEST = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">"
-      + "<soap:Body><test xmlns=\"http://foo\"> foo </test></soap:Body>" + "</soap:Envelope>";
+  private static final String ECHO_SOAP_REQUEST =
+      "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+          "<soap:Body><test xmlns=\"http://foo\"> foo </test></soap:Body>" +
+          "</soap:Envelope>";
 
   private static final String GREETER_SOAP_TEST_ELEMENT_REQUEST =
       "<greetMe xmlns=\"http://apache.org/hello_world_soap_http/types\"><requestType>Dan</requestType></greetMe>";
   private static final String GREETER_SOAP_TEST_ELEMENT_RESPONSE =
       "<greetMeResponse xmlns=\"http://apache.org/hello_world_soap_http/types\"><responseType>Hello Dan</responseType></greetMeResponse>";
 
-  private static final String GREETER_SOAP_REQUEST = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">"
-      + "<soap:Body>" + GREETER_SOAP_TEST_ELEMENT_REQUEST + "</soap:Body>" + "</soap:Envelope>";
+  private static final String GREETER_SOAP_REQUEST =
+      "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+          "<soap:Body>" + GREETER_SOAP_TEST_ELEMENT_REQUEST + "</soap:Body>" +
+          "</soap:Envelope>";
 
   @Rule
   public DynamicPort dynamicPort = new DynamicPort("port1");
@@ -50,6 +55,7 @@ public class ProxyNonBlockingTestCase extends FunctionalTestCase {
   }
 
   @Test
+  @Ignore("RX")
   public void testEchoProxy() throws Exception {
     doTest("/proxies/echo", ECHO_SOAP_REQUEST, ECHO_SOAP_REQUEST);
     getSensingInstance("sensingRequestResponseProcessorEcho").assertRequestResponseThreadsDifferent();
@@ -61,6 +67,7 @@ public class ProxyNonBlockingTestCase extends FunctionalTestCase {
   }
 
   @Test
+  @Ignore("RX")
   public void testGreeterProxy() throws Exception {
     doTest("/proxies/greeter", GREETER_SOAP_REQUEST, GREETER_SOAP_TEST_ELEMENT_RESPONSE);
     getSensingInstance("sensingRequestResponseProcessorGreeter").assertRequestResponseThreadsDifferent();

@@ -180,7 +180,7 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
 
   @Override
   public boolean accept(MuleEvent event) {
-    return acceptsAll() || acceptsEvent(event) || muleContext.getExpressionManager().evaluateBoolean(when, event);
+    return acceptsAll() || acceptsEvent(event) || (when != null && muleContext.getExpressionManager().evaluateBoolean(when, event));
   }
 
   /**

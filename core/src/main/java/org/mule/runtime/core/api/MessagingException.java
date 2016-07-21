@@ -16,6 +16,7 @@ import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.config.DefaultMuleConfiguration;
 import org.mule.runtime.core.config.ExceptionHelper;
 import org.mule.runtime.core.config.i18n.Message;
+import org.mule.runtime.core.exception.ErrorType;
 import org.mule.runtime.core.routing.filters.RegExFilter;
 import org.mule.runtime.core.routing.filters.WildcardFilter;
 
@@ -48,6 +49,11 @@ public class MessagingException extends MuleException {
    * The MuleEvent being processed when the error occurred
    */
   protected final transient MuleEvent event;
+
+  /**
+   * The type of error that occurred
+   */
+  private ErrorType errorType;
 
   protected transient MuleEvent processedEvent;
 

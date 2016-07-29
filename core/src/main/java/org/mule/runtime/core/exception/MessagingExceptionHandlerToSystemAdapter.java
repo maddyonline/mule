@@ -6,13 +6,14 @@
  */
 package org.mule.runtime.core.exception;
 
+import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.exception.MessagingExceptionHandler;
 
 public class MessagingExceptionHandlerToSystemAdapter implements MessagingExceptionHandler {
 
   @Override
-  public MuleEvent handleException(Exception exception, MuleEvent event) {
+  public MuleEvent handleException(MessagingException exception, MuleEvent event) {
     event.getMuleContext().getExceptionListener().handleException(exception);
     return event;
   }

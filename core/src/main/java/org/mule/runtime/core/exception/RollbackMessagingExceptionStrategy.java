@@ -6,6 +6,7 @@
  */
 package org.mule.runtime.core.exception;
 
+import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.exception.MessageRedeliveredException;
 import org.mule.runtime.core.api.MuleEvent;
@@ -47,7 +48,7 @@ public class RollbackMessagingExceptionStrategy extends TemplateMessagingExcepti
   }
 
   @Override
-  protected MuleEvent beforeRouting(Exception exception, MuleEvent event) {
+  protected MuleEvent beforeRouting(MessagingException exception, MuleEvent event) {
     if (!isRedeliveryExhausted(exception)) {
       rollback(exception);
     }
@@ -79,7 +80,7 @@ public class RollbackMessagingExceptionStrategy extends TemplateMessagingExcepti
   }
 
   @Override
-  protected MuleEvent route(MuleEvent event, Exception t) {
+  protected MuleEvent route(MuleEvent event, MessagingException t) {
     MuleEvent resultEvent = event;
     if (isRedeliveryExhausted(t)) {
       if (redeliveryExceeded != null) {

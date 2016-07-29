@@ -20,42 +20,36 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-public class SimpleErrorHandlingTestCase extends FunctionalTestCase
-{
+public class SimpleErrorHandlingTestCase extends FunctionalTestCase {
+
+  @Override
+  protected String getConfigFile() {
+    return "org/mule/test/integration/exceptions/simple-error-handling-config.xml";
+  }
+
+  @Test
+  public void connectivityException() throws Exception {
+    MuleMessage message = runFlow("ioException").getMessage();
+    assertThat(message.getPayload(), is("CON"));
+  }
+
+  @Test
+  public void randomException() throws Exception {
+    MuleMessage message = runFlow("testException").getMessage();
+    assertThat(message.getPayload(), is("ANY"));
+  }
+
+  @Test
+  public void muleConnectivityException() throws Exception {
+    MuleMessage message = runFlow("customException").getMessage();
+    assertThat(message.getPayload(), is("CON"));
+  }
+
+  public static class ThrowExceptionMessageProcessor implements MessageProcessor {
 
     @Override
-    protected String getConfigFile()
-    {
-        return "org/mule/test/integration/exceptions/simple-error-handling-config.xml";
+    public MuleEvent process(MuleEvent event) throws MuleException {
+      throw new DefaultMuleException(new IOException());
     }
-
-    @Test
-    public void connectivityException() throws Exception
-    {
-        MuleMessage message = runFlow("ioException").getMessage();
-        assertThat(message.getPayload(), is("CON"));
-    }
-
-    @Test
-    public void randomException() throws Exception
-    {
-        MuleMessage message = runFlow("testException").getMessage();
-        assertThat(message.getPayload(), is("ANY"));
-    }
-
-    @Test
-    public void muleConnectivityException() throws Exception
-    {
-        MuleMessage message = runFlow("customException").getMessage();
-        assertThat(message.getPayload(), is("CON"));
-    }
-
-    public static class ThrowExceptionMessageProcessor implements MessageProcessor
-    {
-        @Override
-        public MuleEvent process(MuleEvent event) throws MuleException
-        {
-            throw new DefaultMuleException(new IOException());
-        }
-    }
+  }
 }

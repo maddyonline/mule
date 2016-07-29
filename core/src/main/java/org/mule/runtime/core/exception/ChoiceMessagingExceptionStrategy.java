@@ -7,6 +7,7 @@
 package org.mule.runtime.core.exception;
 
 import org.mule.runtime.core.api.GlobalNameableObject;
+import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleMessage;
 import org.mule.runtime.core.api.MuleRuntimeException;
@@ -27,8 +28,7 @@ import java.util.List;
 /**
  * Selects which exception strategy to execute based on filtering.
  * <p/>
- * Exception listeners must implement {@link org.mule.runtime.core.api.exception.MessagingExceptionHandlerAcceptor} to be part of
- * ChoiceMessagingExceptionStrategy
+ * Exception listeners must implement {@link org.mule.runtime.core.api.exception.MessagingExceptionHandlerAcceptor} to be part of ChoiceMessagingExceptionStrategy
  */
 public class ChoiceMessagingExceptionStrategy extends AbstractMuleObjectOwner<MessagingExceptionHandlerAcceptor>
     implements MessagingExceptionHandlerAcceptor, MuleContextAware, Lifecycle, MessageProcessorContainer, GlobalNameableObject {
@@ -48,12 +48,16 @@ public class ChoiceMessagingExceptionStrategy extends AbstractMuleObjectOwner<Me
   }
 
   @Override
-  public MuleEvent handleException(Exception exception, MuleEvent event) {
-    event.setMessage(MuleMessage.builder(event.getMessage()).exceptionPayload(new DefaultExceptionPayload(exception)).build());
+  public MuleEvent handleException(MessagingException exception, MuleEvent event) {
+    event.setMessage(MuleMessage.builder(event.getMessage())
+        .exceptionPayload(new DefaultExceptionPayload(exception))
+        .build());
 
     for (MessagingExceptionHandlerAcceptor exceptionListener : exceptionListeners) {
       if (exceptionListener.accept(event)) {
-        event.setMessage(MuleMessage.builder(event.getMessage()).exceptionPayload(null).build());
+        event.setMessage(MuleMessage.builder(event.getMessage())
+            .exceptionPayload(null)
+            .build());
         return exceptionListener.handleException(exception, event);
       }
     }
@@ -81,9 +85,9 @@ public class ChoiceMessagingExceptionStrategy extends AbstractMuleObjectOwner<Me
       try {
         defaultExceptionStrategy = getMuleContext().getDefaultExceptionStrategy();
       } catch (Exception e) {
-        throw new InitialisationException(CoreMessages.createStaticMessage("Failure initializing "
-            + "choice-exception-strategy. If choice-exception-strategy is defined as default one "
-            + "check that last exception strategy inside choice catchs all"), e, this);
+        throw new InitialisationException(CoreMessages.createStaticMessage("Failure initializing " +
+            "choice-exception-strategy. If choice-exception-strategy is defined as default one " +
+            "check that last exception strategy inside choice catchs all"), e, this);
       }
       this.exceptionListeners.add(new MessagingExceptionStrategyAcceptorDelegate(defaultExceptionStrategy));
     }

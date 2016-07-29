@@ -194,7 +194,7 @@ public class TransactionalErrorHandlingExecutionTemplateTestCase extends Transac
       when(mockMuleContext.getNotificationManager()).thenReturn(mock(ServerNotificationManager.class));
       when(mockMuleContext.getRegistry()).thenReturn(mock(MuleRegistry.class));
       defaultMessagingExceptionStrategy.setMuleContext(mockMuleContext);
-      defaultMessagingExceptionStrategy.handleException((Exception) invocationOnMock.getArguments()[0],
+      defaultMessagingExceptionStrategy.handleException((MessagingException) invocationOnMock.getArguments()[0],
                                                         (MuleEvent) invocationOnMock.getArguments()[1]);
       return mockResultEvent;
     });
@@ -209,7 +209,7 @@ public class TransactionalErrorHandlingExecutionTemplateTestCase extends Transac
       exceptionStrategy.setMuleContext(mockMuleContext);
       when(mockMuleContext.getNotificationManager()).thenReturn(mock(ServerNotificationManager.class));
       when(mockMuleContext.getRegistry()).thenReturn(mock(MuleRegistry.class));
-      exceptionStrategy.handleException((Exception) invocationOnMock.getArguments()[0],
+      exceptionStrategy.handleException((MessagingException) invocationOnMock.getArguments()[0],
                                         (MuleEvent) invocationOnMock.getArguments()[1]);
       return mockResultEvent;
     });

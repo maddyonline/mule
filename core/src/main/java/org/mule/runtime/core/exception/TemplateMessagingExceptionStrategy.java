@@ -37,7 +37,7 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
   private boolean handleException;
 
   @Override
-  final public MuleEvent handleException(Exception exception, MuleEvent event) {
+  final public MuleEvent handleException(MessagingException exception, MuleEvent event) {
     try {
       return new ExceptionMessageProcessor(exception, muleContext, event.getFlowConstruct()).process(event);
     } catch (MuleException e) {
@@ -47,9 +47,9 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
 
   private class ExceptionMessageProcessor extends AbstractRequestResponseMessageProcessor {
 
-    private Exception exception;
+    private MessagingException exception;
 
-    public ExceptionMessageProcessor(Exception exception, MuleContext muleContext, FlowConstruct flowConstruct) {
+    public ExceptionMessageProcessor(MessagingException exception, MuleContext muleContext, FlowConstruct flowConstruct) {
       this.exception = exception;
       setMuleContext(muleContext);
       setFlowConstruct(flowConstruct);
@@ -65,8 +65,9 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
       fireNotification(exception);
       logException(exception, request);
       processStatistics(request);
-      request
-          .setMessage(MuleMessage.builder(request.getMessage()).exceptionPayload(new DefaultExceptionPayload(exception)).build());
+      request.setMessage(MuleMessage.builder(request.getMessage())
+          .exceptionPayload(new DefaultExceptionPayload(exception))
+          .build());
 
       markExceptionAsHandledIfRequired(exception);
       return beforeRouting(exception, request);
@@ -100,10 +101,12 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
         doLogException(exception);
         TransactionCoordination.getInstance().rollbackCurrentTransaction();
       } catch (Exception ex) {
-        // Do nothing
+        //Do nothing
       }
 
-      event.setMessage(MuleMessage.builder(event.getMessage()).exceptionPayload(new DefaultExceptionPayload(exception)).build());
+      event.setMessage(MuleMessage.builder(event.getMessage())
+          .exceptionPayload(new DefaultExceptionPayload(exception))
+          .build());
       return event;
     }
 
@@ -136,7 +139,9 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
 
   protected void nullifyExceptionPayloadIfRequired(MuleEvent event) {
     if (this.handleException) {
-      event.setMessage(MuleMessage.builder(event.getMessage()).exceptionPayload(null).build());
+      event.setMessage(MuleMessage.builder(event.getMessage())
+          .exceptionPayload(null)
+          .build());
     }
   }
 
@@ -147,10 +152,12 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
     }
   }
 
-  protected MuleEvent route(MuleEvent event, Exception t) {
+  protected MuleEvent route(MuleEvent event, MessagingException t) {
     if (!getMessageProcessors().isEmpty()) {
       try {
-        event.setMessage(MuleMessage.builder(event.getMessage()).exceptionPayload(new DefaultExceptionPayload(t)).build());
+        event.setMessage(MuleMessage.builder(event.getMessage())
+            .exceptionPayload(new DefaultExceptionPayload(t))
+            .build());
         MuleEvent result = configuredMessageProcessors.process(event);
         return result;
       } catch (Exception e) {
@@ -180,7 +187,8 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
 
   @Override
   public boolean accept(MuleEvent event) {
-    return acceptsAll() || acceptsEvent(event) || (when != null && muleContext.getExpressionManager().evaluateBoolean(when, event));
+    return acceptsAll() || acceptsEvent(event)
+        || (when != null && muleContext.getExpressionManager().evaluateBoolean(when, event));
   }
 
   /**
@@ -188,8 +196,8 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
    *
    * Useful for exception strategies which ALWAYS must accept certain types of events despite when condition is not true.
    *
-   * @param event The MuleEvent being processed
-   * @return true if it should process the exception for the current event, false otherwise.
+   * @param event   The MuleEvent being processed
+   * @return  true if it should process the exception for the current event, false otherwise.
    */
   protected boolean acceptsEvent(MuleEvent event) {
     return false;
@@ -200,11 +208,11 @@ public abstract class TemplateMessagingExceptionStrategy extends AbstractExcepti
     return when == null;
   }
 
-  protected MuleEvent afterRouting(Exception exception, MuleEvent event) {
+  protected MuleEvent afterRouting(MessagingException exception, MuleEvent event) {
     return event;
   }
 
-  protected MuleEvent beforeRouting(Exception exception, MuleEvent event) {
+  protected MuleEvent beforeRouting(MessagingException exception, MuleEvent event) {
     return event;
   }
 

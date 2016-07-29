@@ -22,6 +22,7 @@ import static org.mule.runtime.core.MessageExchangePattern.REQUEST_RESPONSE;
 
 import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.api.DefaultMuleException;
+import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleMessage;
@@ -50,7 +51,7 @@ public class CatchMessagingExceptionStrategyTestCase extends AbstractMuleContext
 
   private MuleContext mockMuleContext = mock(MuleContext.class, RETURNS_DEEP_STUBS.get());
   @Mock
-  private Exception mockException;
+  private MessagingException mockException;
 
   private MuleEvent mockMuleEvent;
 
@@ -117,9 +118,10 @@ public class CatchMessagingExceptionStrategyTestCase extends AbstractMuleContext
   @Test
   public void testHandleExceptionWithMessageProcessorsChangingEvent() throws Exception {
     MuleEvent lastEventCreated = new DefaultMuleEvent(muleMessage, getTestFlow());
-    catchMessagingExceptionStrategy
-        .setMessageProcessors(asList(createChagingEventMessageProcessor(new DefaultMuleEvent(muleMessage, getTestFlow())),
-                                     createChagingEventMessageProcessor(lastEventCreated)));
+    catchMessagingExceptionStrategy.setMessageProcessors(
+                                                         asList(createChagingEventMessageProcessor(new DefaultMuleEvent(muleMessage,
+                                                                                                                        getTestFlow())),
+                                                                createChagingEventMessageProcessor(lastEventCreated)));
     catchMessagingExceptionStrategy.initialise();
     MuleEvent exceptionHandlingResult = catchMessagingExceptionStrategy.handleException(mockException, mockMuleEvent);
     assertThat(exceptionHandlingResult.getId(), is(lastEventCreated.getId()));
@@ -127,8 +129,8 @@ public class CatchMessagingExceptionStrategyTestCase extends AbstractMuleContext
   }
 
   /**
-   * On fatal error, the exception strategies are not supposed to use MuleMessage.toString() as it could potentially log sensible
-   * data.
+   *  On fatal error, the exception strategies are not supposed to use MuleMessage.toString() as it could
+   * potentially log sensible data.
    */
   @Test
   public void testMessageToStringNotCalledOnFailure() throws Exception {
@@ -136,9 +138,10 @@ public class CatchMessagingExceptionStrategyTestCase extends AbstractMuleContext
     mockMuleEvent = spy(mockMuleEvent);
 
     MuleEvent lastEventCreated = new DefaultMuleEvent(muleMessage, getTestFlow());
-    catchMessagingExceptionStrategy
-        .setMessageProcessors(asList(createFailingEventMessageProcessor(new DefaultMuleEvent(muleMessage, getTestFlow())),
-                                     createFailingEventMessageProcessor(lastEventCreated)));
+    catchMessagingExceptionStrategy.setMessageProcessors(
+                                                         asList(createFailingEventMessageProcessor(new DefaultMuleEvent(muleMessage,
+                                                                                                                        getTestFlow())),
+                                                                createFailingEventMessageProcessor(lastEventCreated)));
     catchMessagingExceptionStrategy.initialise();
 
     when(mockMuleEvent.getMessage().toString()).thenThrow(new RuntimeException("MuleMessage.toString() should not be called"));

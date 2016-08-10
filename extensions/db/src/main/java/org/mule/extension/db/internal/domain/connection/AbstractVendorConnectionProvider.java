@@ -11,7 +11,7 @@ import org.mule.runtime.extension.api.annotation.param.Optional;
 
 import java.util.Map;
 
-abstract class AbstractVendorConnectionProvider<T extends DbConnection> extends AbstractDbConnectionProvider<T> {
+public abstract class AbstractVendorConnectionProvider extends DbConnectionProvider {
 
   /**
    * Specifies a list of custom key-value connectionProperties for the config.

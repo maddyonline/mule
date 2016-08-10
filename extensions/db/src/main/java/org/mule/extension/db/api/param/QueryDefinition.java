@@ -7,14 +7,19 @@
 package org.mule.extension.db.api.param;
 
 import static com.google.common.collect.ImmutableList.copyOf;
+import static org.mule.extension.db.api.param.QueryType.PARAMETERIZED;
+import org.mule.extension.db.internal.domain.param.InputQueryParam;
+import org.mule.extension.db.internal.operation.QuerySettings;
+import org.mule.runtime.core.util.collection.ImmutableMapCollector;
 import org.mule.runtime.extension.api.annotation.Alias;
 import org.mule.runtime.extension.api.annotation.Parameter;
+import org.mule.runtime.extension.api.annotation.ParameterGroup;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.display.Text;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @Alias("query")
 public class QueryDefinition {
@@ -25,11 +30,15 @@ public class QueryDefinition {
   private String sql;
 
   @Parameter
-  private QueryType queryType;
+  @Optional(defaultValue = "PARAMETERIZED")
+  private QueryType queryType = PARAMETERIZED;
 
   @Parameter
   @Optional
   private List<QueryParameter> parameters = new LinkedList<>();
+
+  @ParameterGroup
+  private QuerySettings settings = new QuerySettings();
 
   public QueryDefinition copy() {
     QueryDefinition copy = new QueryDefinition();
@@ -52,10 +61,14 @@ public class QueryDefinition {
     return copyOf(parameters);
   }
 
-  public void addParameters(Collection<QueryParameter> parameters) {
-    if (parameters != null) {
-      this.parameters.addAll(parameters);
-    }
+  public QuerySettings getSettings() {
+    return settings;
+  }
+
+  public Map<String, Object> getParameterValues() {
+    return parameters.stream()
+        .filter(p -> p instanceof InputQueryParam)
+        .collect(new ImmutableMapCollector<>(QueryParameter::getName, p -> ((InputQueryParam) p).getValue()));
   }
 
   public void setSql(String sql) {

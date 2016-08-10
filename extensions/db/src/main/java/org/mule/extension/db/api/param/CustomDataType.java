@@ -21,7 +21,7 @@ public class CustomDataType {
    * Name of the data type used by the JDBC driver.
    */
   @Parameter
-  private String name;
+  private String typeName;
 
   /**
    * Indicates which Java class must be used to map the DB type.
@@ -34,8 +34,8 @@ public class CustomDataType {
     return id;
   }
 
-  public String getName() {
-    return name;
+  public String getTypeName() {
+    return typeName;
   }
 
   public String getClassName() {

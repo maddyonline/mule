@@ -16,45 +16,32 @@ import org.slf4j.Logger;
  * Creates query loggers with different implementations depending on whether a given {@link Log}
  * has the debug level enabled or not
  */
-public class DefaultQueryLoggerFactory implements QueryLoggerFactory
-{
+public class DefaultQueryLoggerFactory implements QueryLoggerFactory {
 
-    @Override
-    public SingleQueryLogger createQueryLogger(Logger logger, QueryTemplate queryTemplate)
-    {
-        if (logger.isDebugEnabled())
-        {
-            return new DebugSingleQueryLogger(logger, queryTemplate);
-        }
-        else
-        {
-            return new NullSingleQueryLogger();
-        }
+  @Override
+  public SingleQueryLogger createQueryLogger(Logger logger, QueryTemplate queryTemplate) {
+    if (logger.isDebugEnabled()) {
+      return new DebugSingleQueryLogger(logger, queryTemplate);
+    } else {
+      return new NullSingleQueryLogger();
     }
+  }
 
-    @Override
-    public PreparedBulkQueryLogger createBulkQueryLogger(Logger logger, QueryTemplate queryTemplate, int bulkSize)
-    {
-        if (logger.isDebugEnabled())
-        {
-            return new DebugPreparedBulkQueryLogger(logger, queryTemplate, bulkSize);
-        }
-        else
-        {
-            return new NullPreparedBulkQueryLogger();
-        }
+  @Override
+  public PreparedBulkQueryLogger createBulkQueryLogger(Logger logger, QueryTemplate queryTemplate, int bulkSize) {
+    if (logger.isDebugEnabled()) {
+      return new DebugPreparedBulkQueryLogger(logger, queryTemplate, bulkSize);
+    } else {
+      return new NullPreparedBulkQueryLogger();
     }
+  }
 
-    @Override
-    public BulkQueryLogger createBulkQueryLogger(Logger logger)
-    {
-        if (logger.isDebugEnabled())
-        {
-            return new DebugBulkQueryLogger(logger);
-        }
-        else
-        {
-            return new NullBulkQueryLogger();
-        }
+  @Override
+  public BulkQueryLogger createBulkQueryLogger(Logger logger) {
+    if (logger.isDebugEnabled()) {
+      return new DebugBulkQueryLogger(logger);
+    } else {
+      return new NullBulkQueryLogger();
     }
+  }
 }

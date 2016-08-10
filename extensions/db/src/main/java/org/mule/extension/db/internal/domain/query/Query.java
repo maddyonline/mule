@@ -7,32 +7,17 @@
 
 package org.mule.extension.db.internal.domain.query;
 
-import static java.util.Arrays.asList;
-import org.mule.extension.db.api.param.InputParameter;
-import org.mule.extension.db.api.param.QueryDefinition;
-import org.mule.extension.db.internal.DbConnector;
-import org.mule.extension.db.internal.domain.connection.DbConnection;
-import org.mule.extension.db.internal.domain.type.CompositeDbTypeManager;
-import org.mule.extension.db.internal.domain.type.DbType;
-import org.mule.extension.db.internal.domain.type.DbTypeManager;
-import org.mule.extension.db.internal.domain.type.StaticDbTypeManager;
-import org.mule.extension.db.internal.resolver.param.GenericParamTypeResolverFactory;
-import org.mule.extension.db.internal.resolver.param.ParamTypeResolverFactory;
+import static java.util.stream.Collectors.toList;
 
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Represents an instantiation of a {@link QueryTemplate} with parameter values
  */
 public class Query {
 
-  private final QueryDefinition queryDefinition;
-  private final StatementType statementType;
-  private final DbConnection connection;
-  private final ParamTypeResolverFactory paramTypeResolverFactory;
-
+  private final QueryTemplate queryTemplate;
+  private final List<QueryParamValue> paramValues;
 
   /**
    * Creates a query from a template and a set of parameter values
@@ -40,43 +25,32 @@ public class Query {
    * @param queryTemplate template describing the query
    * @param paramValues   parameter values for the query
    */
-  public Query(QueryDefinition queryDefinition, StatementType statementType, DbConnector connector, DbConnection connection) {
-    this.queryDefinition = queryDefinition;
-    this.statementType = statementType;
-    this.connection = connection;
-    paramTypeResolverFactory = new GenericParamTypeResolverFactory(createTypeManager(connection, connector));
-  }
-
-  public QueryDefinition getDefinition() {
-    return queryDefinition;
-  }
-
-  public StatementType getStatementType() {
-    return statementType;
-  }
-
-  public boolean hasInputParameters() {
-    return queryDefinition.getParameters().stream().anyMatch(p -> p instanceof InputParameter);
+  public Query(QueryTemplate queryTemplate, List<QueryParamValue> paramValues) {
+    this.paramValues = paramValues;
+    this.queryTemplate = queryTemplate;
   }
 
   /**
-   * Determines actual parameter types for the parameters defined in {@code this}
-   * query
+   * Creates a query from a template
    *
-   * @return a not null map containing the parameter type for each parameter index
-   * @throws SQLException when there are error processing the query
+   * @param queryTemplate template describing the query and parameter values
    */
-  public Map<Integer, DbType> getParamTypes() throws SQLException {
-    return paramTypeResolverFactory.create(this).getParameterTypes(connection, this);
+  public Query(QueryTemplate queryTemplate) {
+    this.queryTemplate = queryTemplate;
+    paramValues = queryTemplate.getInputParams().stream()
+        .map(p -> new QueryParamValue(p.getName(), p.getValue()))
+        .collect(toList());
   }
 
-  private DbTypeManager createTypeManager(DbConnection connection, DbConnector connector) {
-    final DbTypeManager baseTypeManager = connector.getTypeManager();
-    List<DbType> vendorDataTypes = connection.getVendorDataTypes();
-    if (vendorDataTypes.size() > 0) {
-      return new CompositeDbTypeManager(asList(baseTypeManager, new StaticDbTypeManager(connection.getVendorDataTypes())));
-    }
+  public QueryTemplate getQueryTemplate() {
+    return queryTemplate;
+  }
 
-    return baseTypeManager;
+  public List<QueryParamValue> getParamValues() {
+    return paramValues;
+  }
+
+  public boolean isDynamic() {
+    return queryTemplate.isDynamic();
   }
 }

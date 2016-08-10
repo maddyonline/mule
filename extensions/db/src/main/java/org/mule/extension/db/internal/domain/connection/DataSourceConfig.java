@@ -8,8 +8,9 @@
 package org.mule.extension.db.internal.domain.connection;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import org.mule.extension.db.api.param.TransactionIsolation;
+import static org.mule.extension.db.api.param.TransactionIsolation.NOT_CONFIGURED;
 import org.mule.extension.db.api.config.DbPoolingProfile;
+import org.mule.extension.db.api.param.TransactionIsolation;
 import org.mule.runtime.extension.api.annotation.Parameter;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 
@@ -59,8 +60,8 @@ public class DataSourceConfig {
    * The transaction isolation level to set on the driver when connecting the database.
    */
   @Parameter
-  @Optional
-  private TransactionIsolation transactionIsolation;
+  @Optional(defaultValue = "NOT_CONFIGURED")
+  private TransactionIsolation transactionIsolation = NOT_CONFIGURED;
 
   /**
    * Indicates whether or not the created datasource has to support XA transactions. Default is false.
@@ -115,5 +116,37 @@ public class DataSourceConfig {
 
   public DbPoolingProfile getPoolingProfile() {
     return poolingProfile;
+  }
+
+  public void setDriverClassName(String driverClassName) {
+    this.driverClassName = driverClassName;
+  }
+
+  public void setConnectionTimeout(Integer connectionTimeout) {
+    this.connectionTimeout = connectionTimeout;
+  }
+
+  public void setConnectionTimeoutUnit(TimeUnit connectionTimeoutUnit) {
+    this.connectionTimeoutUnit = connectionTimeoutUnit;
+  }
+
+  public void setUser(String user) {
+    this.user = user;
+  }
+
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
+  public void setTransactionIsolation(TransactionIsolation transactionIsolation) {
+    this.transactionIsolation = transactionIsolation;
+  }
+
+  public void setUseXaTransactions(boolean useXaTransactions) {
+    this.useXaTransactions = useXaTransactions;
+  }
+
+  public void setPoolingProfile(DbPoolingProfile poolingProfile) {
+    this.poolingProfile = poolingProfile;
   }
 }

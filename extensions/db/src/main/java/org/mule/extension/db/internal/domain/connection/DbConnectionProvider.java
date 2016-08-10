@@ -33,9 +33,9 @@ import javax.sql.XAConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class AbstractDbConnectionProvider implements ConnectionProvider<DbConnection>, Initialisable, Disposable {
+public class DbConnectionProvider implements ConnectionProvider<DbConnection>, Initialisable, Disposable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDbConnectionProvider.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbConnectionProvider.class);
 
   @ConfigName
   private String configName;
@@ -44,7 +44,7 @@ abstract class AbstractDbConnectionProvider implements ConnectionProvider<DbConn
   private MuleContext muleContext;
 
   @ParameterGroup
-  private ConnectionParameters connectionParameters;
+  protected ConnectionParameters connectionParameters;
 
   private DataSourceFactory dataSourceFactory;
   private DataSource dataSource = null;
@@ -70,7 +70,9 @@ abstract class AbstractDbConnectionProvider implements ConnectionProvider<DbConn
     }
   }
 
-  protected abstract DbConnection createDbConnection(Connection connection) throws Exception;
+  protected DbConnection createDbConnection(Connection connection) throws Exception {
+    return new DefaultDbConnection(connection);
+  }
 
   @Override
   public final void disconnect(DbConnection connection) {
@@ -117,7 +119,7 @@ abstract class AbstractDbConnectionProvider implements ConnectionProvider<DbConn
   public final void initialise() throws InitialisationException {
     dataSourceFactory = createDataSourceFactory();
     try {
-      dataSource = createDataSource();
+      dataSource = obtainDataSource();
     } catch (SQLException e) {
       throw new InitialisationException(createStaticMessage("Could not create DataSource for DB config " + configName), e, this);
     }
@@ -128,10 +130,10 @@ abstract class AbstractDbConnectionProvider implements ConnectionProvider<DbConn
     disposeIfNeeded(dataSourceFactory, LOGGER);
   }
 
-  private DataSource createDataSource() throws SQLException {
+  private DataSource obtainDataSource() throws SQLException {
     DataSource dataSource = connectionParameters.getDataSource();
     if (dataSource == null) {
-      dataSource = dataSourceFactory.create(connectionParameters.getDataSourceConfig());
+      dataSource = createDataSource();
     }
 
     dataSource = dataSourceFactory.decorateDataSource(dataSource, connectionParameters.getDataSourceConfig().getPoolingProfile(),
@@ -140,7 +142,15 @@ abstract class AbstractDbConnectionProvider implements ConnectionProvider<DbConn
     return dataSource;
   }
 
+  protected DataSource createDataSource() throws SQLException {
+    return dataSourceFactory.create(connectionParameters.getDataSourceConfig());
+  }
+
   private DataSourceFactory createDataSourceFactory() {
     return new DataSourceFactory(configName, muleContext);
+  }
+
+  public DataSource getDataSource() {
+    return dataSource;
   }
 }

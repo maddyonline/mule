@@ -161,7 +161,7 @@ public class StatementResultIterator implements Iterator<StatementResult> {
   }
 
   private void moveToNextResult() throws SQLException {
-    if (connection.getMetaData().supportsMultipleOpenResults()) {
+    if (connection.getJdbcConnection().getMetaData().supportsMultipleOpenResults()) {
       statement.getMoreResults(Statement.KEEP_CURRENT_RESULT);
     } else {
       if (hasProcessedResultSet && resultSetHandler.requiresMultipleOpenedResults()) {

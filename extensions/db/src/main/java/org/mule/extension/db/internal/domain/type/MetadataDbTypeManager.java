@@ -73,7 +73,7 @@ public class MetadataDbTypeManager implements DbTypeManager {
 
   protected void initialise(DbConnection connection) {
     try {
-      DatabaseMetaData metaData = connection.getMetaData();
+      DatabaseMetaData metaData = connection.getJdbcConnection().getMetaData();
       ResultSet typeInfo = metaData.getTypeInfo();
       ResultSetIterator resultSetIterator =
           new ResultSetIterator(connection, typeInfo, new InsensitiveMapRowHandler(), new SingleResultResultSetCloser());

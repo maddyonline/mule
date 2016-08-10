@@ -8,7 +8,6 @@
 package org.mule.extension.db.internal.parser;
 
 import org.mule.extension.db.internal.domain.query.QueryTemplate;
-import org.mule.extension.db.internal.domain.query.StatementType;
 
 /**
  * Parses a SQL queries
@@ -23,6 +22,4 @@ public interface QueryTemplateParser {
    * @throws QueryTemplateParsingException when there is a parsing error
    */
   QueryTemplate parse(String sql) throws QueryTemplateParsingException;
-
-  StatementType getStatementType(String sql);
 }

@@ -11,18 +11,18 @@ import org.mule.extension.db.api.param.QueryDefinition;
 import org.mule.extension.db.internal.DbConnector;
 import org.mule.extension.db.internal.domain.connection.DbConnection;
 import org.mule.extension.db.internal.domain.query.Query;
-import org.mule.runtime.core.api.MuleEvent;
 
 /**
- * Resolves a {@link Query} for a given {@link MuleEvent}
+ * Resolves a {@link Query}
  */
 public interface QueryResolver {
 
   /**
-   * Resolves a query in the context of a given Mule event.
+   * Resolves a query
    *
-   * @param connection connection to the database. not null
-   * @param muleEvent used to resolve any Mule expression. Not null
+   * @param queryDefinition
+   * @param connector
+   * @param connection      connection to the database. not null
    * @return query resolved for the given event
    */
   Query resolve(QueryDefinition queryDefinition, DbConnector connector, DbConnection connection) throws QueryResolutionException;

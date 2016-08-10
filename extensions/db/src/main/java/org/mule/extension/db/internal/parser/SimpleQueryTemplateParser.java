@@ -70,8 +70,7 @@ public class SimpleQueryTemplateParser implements QueryTemplateParser {
     return doParse(sql, statementType);
   }
 
-  @Override
-  public StatementType getStatementType(String sql) {
+  private StatementType getStatementType(String sql) {
     StatementType statementType;
 
     sql = sql.toUpperCase();

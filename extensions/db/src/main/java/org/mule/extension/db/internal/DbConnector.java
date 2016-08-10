@@ -6,12 +6,14 @@
  */
 package org.mule.extension.db.internal;
 
+import org.mule.extension.db.api.StatementStreamingResultSetCloser;
 import org.mule.extension.db.api.param.CustomDataType;
 import org.mule.extension.db.api.param.InOutQueryParameter;
 import org.mule.extension.db.api.param.InputParameter;
 import org.mule.extension.db.api.param.OutputParameter;
 import org.mule.extension.db.api.param.QueryParameter;
-import org.mule.extension.db.internal.domain.connection.DefaultDbConnectionProvider;
+import org.mule.extension.db.internal.domain.connection.DbConnectionProvider;
+import org.mule.extension.db.internal.domain.connection.derby.DerbyConnectionProvider;
 import org.mule.extension.db.internal.domain.type.ArrayResolvedDbType;
 import org.mule.extension.db.internal.domain.type.CompositeDbTypeManager;
 import org.mule.extension.db.internal.domain.type.DbType;
@@ -25,11 +27,13 @@ import org.mule.extension.db.internal.operation.DmlOperations;
 import org.mule.runtime.core.api.lifecycle.Initialisable;
 import org.mule.runtime.core.api.lifecycle.InitialisationException;
 import org.mule.runtime.core.util.collection.ImmutableListCollector;
+import org.mule.runtime.extension.api.annotation.Export;
 import org.mule.runtime.extension.api.annotation.Extension;
 import org.mule.runtime.extension.api.annotation.Operations;
 import org.mule.runtime.extension.api.annotation.Parameter;
 import org.mule.runtime.extension.api.annotation.SubTypeMapping;
 import org.mule.runtime.extension.api.annotation.connector.Providers;
+import org.mule.runtime.extension.api.annotation.dsl.xml.Xml;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 
 import java.sql.Types;
@@ -41,9 +45,12 @@ import org.apache.commons.lang.StringUtils;
 
 @Extension(name = "DB Connector", description = "Connector for connecting to relation Databases through the JDBC API")
 @Operations({DmlOperations.class})
-@Providers({DefaultDbConnectionProvider.class})
-@SubTypeMapping(baseType = QueryParameter.class,
-    subTypes = {InputParameter.class, InOutQueryParameter.class, OutputParameter.class})
+@Providers({DbConnectionProvider.class, DerbyConnectionProvider.class})
+@SubTypeMapping(baseType = QueryParameter.class, subTypes = {InputParameter.class, InOutQueryParameter.class,
+    OutputParameter.class})
+@Xml(namespace = "dbn")
+@Export(classes = StatementStreamingResultSetCloser.class,
+    resources = {"META-INF/services/org/mule/runtime/core/config/registry-bootstrap.properties"})
 public class DbConnector implements Initialisable {
 
   /**
@@ -80,7 +87,7 @@ public class DbConnector implements Initialisable {
 
   private List<DbType> getCustomTypes() {
     return customDataTypes.stream().map(type -> {
-      final String name = type.getName();
+      final String name = type.getTypeName();
       final int id = type.getId();
       if (id == Types.ARRAY) {
         return new ArrayResolvedDbType(id, name);

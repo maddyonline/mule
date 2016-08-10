@@ -7,30 +7,36 @@
 
 package org.mule.extension.db.internal.resolver.param;
 
-import static org.mule.extension.db.internal.domain.query.StatementType.STORE_PROCEDURE_CALL;
-import org.mule.extension.db.internal.domain.query.Query;
+import org.mule.extension.db.internal.domain.query.QueryTemplate;
+import org.mule.extension.db.internal.domain.query.StatementType;
 import org.mule.extension.db.internal.domain.type.DbTypeManager;
 
 /**
  * Creates {@link ParamTypeResolver} for generic databases
  */
-public class GenericParamTypeResolverFactory implements ParamTypeResolverFactory {
+public class GenericParamTypeResolverFactory implements ParamTypeResolverFactory
+{
 
-  private final DbTypeManager dbTypeManager;
+    private final DbTypeManager dbTypeManager;
 
-  public GenericParamTypeResolverFactory(DbTypeManager dbTypeManager) {
-    this.dbTypeManager = dbTypeManager;
-  }
-
-  public ParamTypeResolver create(Query query) {
-    ParamTypeResolver metadataParamTypeResolver;
-
-    if (query.getStatementType() == STORE_PROCEDURE_CALL) {
-      metadataParamTypeResolver = new StoredProcedureParamTypeResolver(dbTypeManager);
-    } else {
-      metadataParamTypeResolver = new QueryParamTypeResolver(dbTypeManager);
+    public GenericParamTypeResolverFactory(DbTypeManager dbTypeManager)
+    {
+        this.dbTypeManager = dbTypeManager;
     }
 
-    return new DefaultParamTypeResolver(dbTypeManager, metadataParamTypeResolver);
-  }
+    public ParamTypeResolver create(QueryTemplate queryTemplate)
+    {
+        ParamTypeResolver metadataParamTypeResolver;
+
+        if (queryTemplate.getType() == StatementType.STORE_PROCEDURE_CALL)
+        {
+            metadataParamTypeResolver = new StoredProcedureParamTypeResolver(dbTypeManager);
+        }
+        else
+        {
+            metadataParamTypeResolver = new QueryParamTypeResolver(dbTypeManager);
+        }
+
+        return new DefaultParamTypeResolver(dbTypeManager, metadataParamTypeResolver);
+    }
 }

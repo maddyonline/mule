@@ -7,39 +7,40 @@
 
 package org.mule.extension.db.internal.domain.logger;
 
-import org.mule.extension.db.internal.domain.query.Query;
+import org.mule.extension.db.internal.domain.query.QueryTemplate;
 
 import org.slf4j.Logger;
 
 /**
  * Creates {@link QueryLogger} instances
  */
-public interface QueryLoggerFactory {
+public interface QueryLoggerFactory
+{
 
-  /**
-   * Creates a logger for a single query
-   *
-   * @param logger logger where the query will be logged
-   * @param query query tepmlate to log
-   * @return a non null {@link SingleQueryLogger}
-   */
-  SingleQueryLogger createQueryLogger(Logger logger, Query query);
+    /**
+     * Creates a logger for a single query
+     *
+     * @param logger logger where the query will be logged
+     * @param queryTemplate query tepmlate to log
+     * @return a non null {@link SingleQueryLogger}
+     */
+    SingleQueryLogger createQueryLogger(Logger logger, QueryTemplate queryTemplate);
 
-  /**
-   * Creates a logger for a single query running in bulk mode
-   *
-   * @param logger logger where the query will be logged
-   * @param query query to log
-   * @param bulkSize total size of the bulk operation. Must be positive
-   * @return a non null {@link PreparedBulkQueryLogger}
-   */
-  PreparedBulkQueryLogger createBulkQueryLogger(Logger logger, Query query, int bulkSize);
+    /**
+     * Creates a logger for a single query running in bulk mode
+     *
+     * @param logger logger where the query will be logged
+     * @param queryTemplate query tepmlate to log
+     * @param bulkSize total size of the bulk operation. Must be positive
+     * @return a non null {@link PreparedBulkQueryLogger}
+     */
+    PreparedBulkQueryLogger createBulkQueryLogger(Logger logger, QueryTemplate queryTemplate, int bulkSize);
 
-  /**
-   * Creates a logger for a bulk query
-   *
-   * @param logger logger where the query will be logged
-   * @return a non null {@link BulkQueryLogger}
-   */
-  BulkQueryLogger createBulkQueryLogger(Logger logger);
+    /**
+     * Creates a logger for a bulk query
+     *
+     * @param logger logger where the query will be logged
+     * @return a non null {@link BulkQueryLogger}
+     */
+    BulkQueryLogger createBulkQueryLogger(Logger logger);
 }

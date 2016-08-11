@@ -90,15 +90,18 @@ public class DefaultDbConnection implements DbConnection {
     }
   }
 
-  @Override public void beginStreaming() {
+  @Override
+  public void beginStreaming() {
     streaming = true;
   }
 
-  @Override public boolean isStreaming() {
+  @Override
+  public boolean isStreaming() {
     return streaming;
   }
 
-  @Override public void endStreaming() {
+  @Override
+  public void endStreaming() {
     streaming = false;
   }
 }

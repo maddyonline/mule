@@ -27,7 +27,7 @@ public abstract class QueryDefinition {
   private String sql;
 
   @ParameterGroup
-  private QuerySettings settings;
+  private QuerySettings settings = new QuerySettings();
 
   public QueryDefinition resolveFromTemplate() {
     final QueryDefinition template = getSettings().getTemplate();

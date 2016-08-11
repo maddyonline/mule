@@ -24,11 +24,15 @@
 
     <flow name="inlineOverriddenParamsByName">
         <dbn:select config-ref="dbConfig">
-            <dbn:parameterized-query template="namedParamsQueryTemplate">
-                <!-- Note that parameters are in different order-->
-                <dbn:in-param paramName="name" value="Venus" />
-                <dbn:in-param paramName="position" value="4" />
-            </dbn:parameterized-query>
+            <dbn:query>
+                <dbn:parameterized-query template="namedParamsQueryTemplate">
+                    <dbn:parameters>
+                        <!-- Note that parameters are in different order-->
+                        <dbn:in-param paramName="name" value="Venus" />
+                        <dbn:in-param paramName="position" value="4" />
+                    </dbn:parameters>
+                </dbn:parameterized-query>
+            </dbn:query>
         </dbn:select>
     </flow>
 </mule>

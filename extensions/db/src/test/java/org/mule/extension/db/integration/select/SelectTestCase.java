@@ -69,8 +69,7 @@ public class SelectTestCase extends AbstractDbIntegrationTestCase {
   }
 
   @Test
-  public void limitsStreamedRows() throws Exception
-  {
+  public void limitsStreamedRows() throws Exception {
     MuleMessage response = flowRunner("selectMaxStreamedRows").run().getMessage();
     assertMessageContains(response, getVenusRecord(), getEarthRecord());
   }

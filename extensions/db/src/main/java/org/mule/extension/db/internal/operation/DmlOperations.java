@@ -152,7 +152,8 @@ public class DmlOperations {
     return new int[] {0};
   }
 
-  private QueryStatementFactory getStatementFactory(Integer fetchSize, Integer maxRows, boolean streaming, QuerySettings settings) {
+  private QueryStatementFactory getStatementFactory(Integer fetchSize, Integer maxRows, boolean streaming,
+                                                    QuerySettings settings) {
     QueryStatementFactory statementFactory = new QueryStatementFactory();
 
     if (maxRows != null) {

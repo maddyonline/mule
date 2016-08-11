@@ -6,6 +6,9 @@
  */
 package org.mule.extension.db.api.param;
 
-public enum QueryType {
-  PARAMETERIZED, DYNAMIC
+import org.mule.runtime.extension.api.annotation.Alias;
+
+@Alias("dynamic-query")
+public class DynamicQueryDefinition extends QueryDefinition {
+
 }

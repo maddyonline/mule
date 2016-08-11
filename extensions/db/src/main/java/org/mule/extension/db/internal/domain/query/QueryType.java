@@ -10,7 +10,7 @@ package org.mule.extension.db.internal.domain.query;
 /**
  * Defines types of SQL queries
  */
-public enum StatementType {
+public enum QueryType {
 
   SELECT,
 

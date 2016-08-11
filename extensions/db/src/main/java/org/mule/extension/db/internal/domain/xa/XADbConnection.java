@@ -92,4 +92,16 @@ public class XADbConnection implements DbConnection, XATransactionalConnection {
   public void release() {
     connection.release();
   }
+
+  @Override public void beginStreaming() {
+    connection.beginStreaming();
+  }
+
+  @Override public boolean isStreaming() {
+    return connection.isStreaming();
+  }
+
+  @Override public void endStreaming() {
+    connection.endStreaming();
+  }
 }

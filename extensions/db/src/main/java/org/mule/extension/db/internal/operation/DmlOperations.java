@@ -14,8 +14,6 @@ import org.mule.extension.db.internal.domain.connection.DbConnection;
 import org.mule.extension.db.internal.domain.executor.SelectExecutor;
 import org.mule.extension.db.internal.domain.metadata.SelectOutputResolver;
 import org.mule.extension.db.internal.domain.statement.QueryStatementFactory;
-import org.mule.extension.db.internal.parser.QueryTemplateParser;
-import org.mule.extension.db.internal.parser.SimpleQueryTemplateParser;
 import org.mule.extension.db.internal.resolver.query.DefaultQueryResolver;
 import org.mule.extension.db.internal.resolver.query.QueryResolver;
 import org.mule.extension.db.internal.result.resultset.IteratorResultSetHandler;
@@ -37,27 +35,32 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DmlOperations {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(DmlOperations.class);
+  private static final int DEFAULT_FETCH_SIZE = 10;
 
   @Inject
   private StatementStreamingResultSetCloser resultSetCloser;
 
-  private final QueryTemplateParser queryParser = new SimpleQueryTemplateParser();
   private final QueryResolver queryResolver = new DefaultQueryResolver();
 
   /**
    * Selects data from a database
    */
   @MetadataScope(outputResolver = SelectOutputResolver.class)
-  public InterceptingCallback<Object> select(@ParameterGroup QueryDefinition query,
+  public InterceptingCallback<Object> select(QueryDefinition query,
                                              @Optional(defaultValue = "false") @Expression(NOT_SUPPORTED) boolean streaming,
-                                             @Optional(defaultValue = "10") int fetchSize,
+                                             @Optional Integer fetchSize,
                                              @Optional Integer maxRows,
                                              @UseConfig DbConnector connector,
                                              @Connection DbConnection connection)
       throws SQLException {
 
-    QueryStatementFactory statementFactory = getStatementFactory(fetchSize, maxRows, query.getSettings());
+    QueryStatementFactory statementFactory = getStatementFactory(fetchSize, maxRows, streaming, query.getSettings());
 
     InsensitiveMapRowHandler recordHandler = new InsensitiveMapRowHandler();
     ResultSetHandler resultSetHandler =
@@ -139,28 +142,32 @@ public class DmlOperations {
   /**
    * Updates data in a database.
    *
-   * @param dynamicQuery
+   * @param sql
    * @param file         The location of a file to load. The file can point to a resource on the classpath or on a disk.
    *                     This parameter is mutually exclusive with {@code sql}
    * @param settings
    * @return
    */
-  public int[] bulkUpdate(@Optional @Text String dynamicQuery, @Optional String file, @ParameterGroup QuerySettings settings) {
+  public int[] bulkUpdate(@Optional @Text String sql, @Optional String file, @ParameterGroup QuerySettings settings) {
     return new int[] {0};
   }
 
-  private QueryStatementFactory getStatementFactory(Integer fetchSize, Integer maxRows, QuerySettings settings) {
+  private QueryStatementFactory getStatementFactory(Integer fetchSize, Integer maxRows, boolean streaming, QuerySettings settings) {
     QueryStatementFactory statementFactory = new QueryStatementFactory();
+
     if (maxRows != null) {
       statementFactory.setMaxRows(maxRows);
     }
 
     if (fetchSize != null) {
       statementFactory.setFetchSize(fetchSize);
+    } else if (streaming) {
+      LOGGER.warn("Streaming mode needs to configure fetchSize property. Using default value: " + DEFAULT_FETCH_SIZE);
+      statementFactory.setFetchSize(DEFAULT_FETCH_SIZE);
     }
 
-    statementFactory
-        .setQueryTimeout(new Long(settings.getQueryTimeoutUnit().toSeconds(settings.getQueryTimeout())).intValue());
+    statementFactory.setQueryTimeout(new Long(settings.getQueryTimeoutUnit().toSeconds(settings.getQueryTimeout())).intValue());
+
     return statementFactory;
   }
 }

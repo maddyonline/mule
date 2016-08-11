@@ -35,4 +35,10 @@ public interface DbConnection extends TransactionalConnection {
   Connection getJdbcConnection();
 
   void release();
+
+  void beginStreaming();
+
+  boolean isStreaming();
+
+  void endStreaming();
 }

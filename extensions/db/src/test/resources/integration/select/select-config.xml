@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:dbn="http://www.mulesoft.org/schema/mule/dbn"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+            http://www.mulesoft.org/schema/mule/dbn http://www.mulesoft.org/schema/mule/dbn/current/mule-dbn.xsd">
+
+    <flow name="select">
+        <dbn:select config-ref="dbConfig">
+            <dbn:query>
+                <dbn:parameterized-query sql="select * from PLANET order by ID">
+                    <!--<dbn:sql>select * from PLANET order by ID</dbn:sql>-->
+                </dbn:parameterized-query>
+            </dbn:query>
+        </dbn:select>
+    </flow>
+
+    <flow name="fixedParam">
+        <dbn:select config-ref="dbConfig">
+            <dbn:query>
+                <dbn:parameterized-query sql="SELECT * FROM PLANET WHERE POSITION = 4">
+                    <!--<dbn:sql>select * from PLANET order by ID</dbn:sql>-->
+                </dbn:parameterized-query>
+            </dbn:query>
+        </dbn:select>
+    </flow>
+
+    <flow name="expressionAndFixedParamMixed">
+        <set-variable variableName="position" value="3"/>
+        <dbn:select config-ref="dbConfig">
+            <dbn:query>
+                <dbn:parameterized-query sql="SELECT * FROM PLANET WHERE POSITION = #[position] AND NAME = 'Earth'">
+                    <!--<dbn:sql>select * from PLANET order by ID</dbn:sql>-->
+                </dbn:parameterized-query>
+            </dbn:query>
+        </dbn:select>
+    </flow>
+
+    <flow name="dynamicQuery">
+        <set-variable variableName="tableName" value="PLANET"/>
+
+        <dbn:select config-ref="dbConfig">
+            <dbn:query>
+                <dbn:dynamic-query sql="select * from #[tableName] order by ID" />
+            </dbn:query>
+        </dbn:select>
+    </flow>
+
+    <flow name="selectMaxRows">
+        <dbn:select config-ref="dbConfig" maxRows="2">
+            <dbn:query>
+                <dbn:parameterized-query sql="select * from PLANET order by ID" />
+            </dbn:query>
+        </dbn:select>
+    </flow>
+
+    <flow name="selectMaxStreamedRows">
+        <dbn:select config-ref="dbConfig" maxRows="2">
+            <dbn:query>
+                <dbn:parameterized-query sql="select * from PLANET order by ID" />
+            </dbn:query>
+        </dbn:select>
+
+        <set-variable variableName="records" value="#[new ArrayList()]"/>
+
+        <foreach>
+            <expression-component>flowVars['records'].add(payload)</expression-component>
+        </foreach>
+
+        <set-payload value="#[flowVars['records']]"/>
+    </flow>
+
+</mule>

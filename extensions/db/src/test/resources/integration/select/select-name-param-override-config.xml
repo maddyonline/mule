@@ -1,33 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mule xmlns="http://www.mulesoft.org/schema/mule/core"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xmlns:db="http://www.mulesoft.org/schema/mule/db"
+      xmlns:dbn="http://www.mulesoft.org/schema/mule/dbn"
       xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-            http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+            http://www.mulesoft.org/schema/mule/dbn http://www.mulesoft.org/schema/mule/dbn/current/mule-dbn.xsd">
 
-    <db:template-query name="namedParamsQueryTemplate">
-        <db:parameterized-query>SELECT * FROM PLANET WHERE POSITION = :position and NAME = :name</db:parameterized-query>
-        <db:in-param name="position" defaultValue="4"/>
-        <db:in-param name="name" defaultValue="Venus"/>
-    </db:template-query>
+    <dbn:parameterized-query name="namedParamsQueryTemplate" sql="SELECT * FROM PLANET WHERE POSITION = :position and NAME = :name">
+        <dbn:parameters>
+            <dbn:in-param paramName="position" value="4" />
+            <dbn:in-param paramName="name" value="Venus" />
+        </dbn:parameters>
+    </dbn:parameterized-query>
 
-    <db:template-query name="overridenQueryParamByName">
-        <db:template-query-ref name="namedParamsQueryTemplate"/>
-        <db:in-param name="name" defaultValue="Mars"/>
-    </db:template-query>
+    <dbn:parameterized-query name="overridenQueryParamByName" template="namedParamsQueryTemplate">
+        <dbn:parameters>
+            <dbn:in-param paramName="name" value="Mars" />
+        </dbn:parameters>
+    </dbn:parameterized-query>
 
     <flow name="overriddenParamsByName">
-        <db:select config-ref="dbConfig">
-            <db:template-query-ref name="overridenQueryParamByName"/>
-        </db:select>
+        <dbn:select config-ref="dbConfig" query="overridenQueryParamByName" />
     </flow>
 
     <flow name="inlineOverriddenParamsByName">
-        <db:select config-ref="dbConfig">
-            <db:template-query-ref name="namedParamsQueryTemplate"/>
-            <!-- Note that parameters are in different order-->
-            <db:in-param name="name" value="Earth"/>
-            <db:in-param name="position" value="3"/>
-        </db:select>
+        <dbn:select config-ref="dbConfig">
+            <dbn:parameterized-query template="namedParamsQueryTemplate">
+                <!-- Note that parameters are in different order-->
+                <dbn:in-param paramName="name" value="Venus" />
+                <dbn:in-param paramName="position" value="4" />
+            </dbn:parameterized-query>
+        </dbn:select>
     </flow>
 </mule>

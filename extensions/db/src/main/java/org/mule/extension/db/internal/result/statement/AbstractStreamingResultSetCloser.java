@@ -29,6 +29,9 @@ public class AbstractStreamingResultSetCloser implements StreamingResultSetClose
       resultSet.close();
     } catch (SQLException e) {
       LOGGER.warn("Error attempting to close resultSet", e);
+    } finally {
+      connection.endStreaming();
+      connection.release();
     }
   }
 }

@@ -6,45 +6,60 @@
  */
 package org.mule.extension.db.api.param;
 
-import static com.google.common.collect.ImmutableList.copyOf;
-import static org.mule.extension.db.api.param.QueryType.PARAMETERIZED;
-import org.mule.extension.db.internal.domain.param.InputQueryParam;
+import static java.lang.String.format;
+import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.mule.runtime.core.config.i18n.MessageFactory.createStaticMessage;
+import static org.mule.runtime.extension.api.introspection.parameter.ExpressionSupport.LITERAL;
 import org.mule.extension.db.internal.operation.QuerySettings;
-import org.mule.runtime.core.util.collection.ImmutableMapCollector;
-import org.mule.runtime.extension.api.annotation.Alias;
+import org.mule.runtime.core.api.MuleRuntimeException;
+import org.mule.runtime.extension.api.annotation.Expression;
 import org.mule.runtime.extension.api.annotation.Parameter;
 import org.mule.runtime.extension.api.annotation.ParameterGroup;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.display.Text;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-@Alias("query")
-public class QueryDefinition {
+public abstract class QueryDefinition {
 
   @Parameter
   @Optional
+  @Expression(LITERAL)
   @Text
   private String sql;
 
-  @Parameter
-  @Optional(defaultValue = "PARAMETERIZED")
-  private QueryType queryType = PARAMETERIZED;
-
-  @Parameter
-  @Optional
-  private List<QueryParameter> parameters = new LinkedList<>();
-
   @ParameterGroup
-  private QuerySettings settings = new QuerySettings();
+  private QuerySettings settings;
 
-  public QueryDefinition copy() {
-    QueryDefinition copy = new QueryDefinition();
+  public QueryDefinition resolveFromTemplate() {
+    final QueryDefinition template = getSettings().getTemplate();
+
+    if (template == null) {
+      return this;
+    }
+
+    if (!getClass().equals(template.getClass())) {
+      throw new IllegalArgumentException(
+                                         format("Invalid template specified. Cannot apply template of type '%s' on a definition of type '%s'",
+                                                template.getClass().getName(), getClass().getName()));
+    }
+
+    QueryDefinition resolvedDefinition = copy();
+
+    if (isBlank(resolvedDefinition.getSql())) {
+      resolvedDefinition.setSql(template.getSql());
+    }
+
+    return resolvedDefinition;
+  }
+
+  protected QueryDefinition copy() {
+    QueryDefinition copy;
+    try {
+      copy = getClass().newInstance();
+    } catch (Exception e) {
+      throw new MuleRuntimeException(createStaticMessage("Could not create instance of " + getClass().getName()), e);
+    }
+
     copy.sql = sql;
-    copy.parameters = new LinkedList<>(parameters);
-    copy.queryType = queryType;
 
     return copy;
   }
@@ -53,22 +68,8 @@ public class QueryDefinition {
     return sql;
   }
 
-  public QueryType getQueryType() {
-    return queryType;
-  }
-
-  public List<QueryParameter> getParameters() {
-    return copyOf(parameters);
-  }
-
   public QuerySettings getSettings() {
     return settings;
-  }
-
-  public Map<String, Object> getParameterValues() {
-    return parameters.stream()
-        .filter(p -> p instanceof InputQueryParam)
-        .collect(new ImmutableMapCollector<>(QueryParameter::getName, p -> ((InputQueryParam) p).getValue()));
   }
 
   public void setSql(String sql) {

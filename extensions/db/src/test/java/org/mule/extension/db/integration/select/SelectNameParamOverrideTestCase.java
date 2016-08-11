@@ -4,11 +4,11 @@
  * license, a copy of which has been included with this distribution in the
  * LICENSE.txt file.
  */
-
 package org.mule.extension.db.integration.select;
 
 import static org.mule.extension.db.integration.TestRecordUtil.assertMessageContains;
-import static org.mule.extension.db.integration.TestRecordUtil.getAllPlanetRecords;
+import static org.mule.extension.db.integration.TestRecordUtil.getEarthRecord;
+import static org.mule.extension.db.integration.TestRecordUtil.getMarsRecord;
 import org.mule.extension.db.integration.AbstractDbIntegrationTestCase;
 import org.mule.extension.db.integration.TestDbConfig;
 import org.mule.extension.db.integration.model.AbstractTestDatabase;
@@ -19,9 +19,9 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
-public class SelectDefaultTestCase extends AbstractDbIntegrationTestCase {
+public class SelectNameParamOverrideTestCase extends AbstractDbIntegrationTestCase {
 
-  public SelectDefaultTestCase(String dataSourceConfigResource, AbstractTestDatabase testDatabase) {
+  public SelectNameParamOverrideTestCase(String dataSourceConfigResource, AbstractTestDatabase testDatabase) {
     super(dataSourceConfigResource, testDatabase);
   }
 
@@ -32,12 +32,18 @@ public class SelectDefaultTestCase extends AbstractDbIntegrationTestCase {
 
   @Override
   protected String[] getFlowConfigurationResources() {
-    return new String[] {"integration/select/select-default-config.xml"};
+    return new String[] {"integration/select/select-name-param-override-config.xml"};
   }
 
   @Test
-  public void select() throws Exception {
-    MuleMessage response = flowRunner("select").run().getMessage();
-    assertMessageContains(response, getAllPlanetRecords());
+  public void usesParamOverriddenByName() throws Exception {
+    MuleMessage response = flowRunner("overriddenParamsByName").run().getMessage();
+    assertMessageContains(response, getMarsRecord());
+  }
+
+  @Test
+  public void usesInlineParamOverriddenByName() throws Exception {
+    MuleMessage response = flowRunner("inlineOverriddenParamsByName").run().getMessage();
+    assertMessageContains(response, getEarthRecord());
   }
 }

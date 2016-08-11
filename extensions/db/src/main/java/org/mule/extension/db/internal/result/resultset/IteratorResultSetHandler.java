@@ -33,6 +33,7 @@ public class IteratorResultSetHandler implements ResultSetHandler {
   @Override
   public ResultSetIterator processResultSet(DbConnection connection, ResultSet resultSet) throws SQLException {
     streamingResultSetCloser.trackResultSet(connection, resultSet);
+    connection.beginStreaming();
 
     return new ResultSetIterator(connection, resultSet, rowHandler, streamingResultSetCloser);
   }

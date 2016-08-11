@@ -10,7 +10,7 @@ package org.mule.extension.db.internal.parser;
 import org.mule.extension.db.internal.domain.param.DefaultInputQueryParam;
 import org.mule.extension.db.internal.domain.param.QueryParam;
 import org.mule.extension.db.internal.domain.query.QueryTemplate;
-import org.mule.extension.db.internal.domain.query.StatementType;
+import org.mule.extension.db.internal.domain.query.QueryType;
 import org.mule.extension.db.internal.domain.type.UnknownDbType;
 import org.mule.runtime.core.util.StringUtils;
 
@@ -65,37 +65,37 @@ public class SimpleQueryTemplateParser implements QueryTemplateParser {
   public QueryTemplate parse(String sql) {
     sql = sql.trim();
 
-    StatementType statementType = getStatementType(sql);
+    QueryType queryType = getStatementType(sql);
 
-    return doParse(sql, statementType);
+    return doParse(sql, queryType);
   }
 
-  private StatementType getStatementType(String sql) {
-    StatementType statementType;
+  private QueryType getStatementType(String sql) {
+    QueryType queryType;
 
     sql = sql.toUpperCase();
 
     if (isSelect(sql)) {
-      statementType = StatementType.SELECT;
+      queryType = QueryType.SELECT;
     } else if (isInsert(sql)) {
-      statementType = StatementType.INSERT;
+      queryType = QueryType.INSERT;
     } else if (isDelete(sql)) {
-      statementType = StatementType.DELETE;
+      queryType = QueryType.DELETE;
     } else if (isUpdate(sql)) {
-      statementType = StatementType.UPDATE;
+      queryType = QueryType.UPDATE;
     } else if (isStoredProcedureCall(sql)) {
-      statementType = StatementType.STORE_PROCEDURE_CALL;
+      queryType = QueryType.STORE_PROCEDURE_CALL;
     } else if (isTruncate(sql)) {
-      statementType = StatementType.TRUNCATE;
+      queryType = QueryType.TRUNCATE;
     } else if (isMerge(sql)) {
-      statementType = StatementType.MERGE;
+      queryType = QueryType.MERGE;
     } else {
-      statementType = StatementType.DDL;
+      queryType = QueryType.DDL;
     }
-    return statementType;
+    return queryType;
   }
 
-  private QueryTemplate doParse(String sqlText, StatementType statementType) {
+  private QueryTemplate doParse(String sqlText, QueryType queryType) {
     if (StringUtils.isEmpty(sqlText)) {
       throw new QueryTemplateParsingException("SQL text cannot be empty");
     }
@@ -177,7 +177,7 @@ public class SimpleQueryTemplateParser implements QueryTemplateParser {
       }
     }
 
-    return new QueryTemplate(sqlToUse, statementType, parameterList);
+    return new QueryTemplate(sqlToUse, queryType, parameterList);
   }
 
   private boolean isParamChar(char c) {

@@ -22,6 +22,7 @@ import java.util.List;
 public class DefaultDbConnection implements DbConnection {
 
   private final Connection jdbcConnection;
+  private boolean streaming = false;
 
   public DefaultDbConnection(Connection jdbcConnection) {
     this.jdbcConnection = jdbcConnection;
@@ -79,10 +80,25 @@ public class DefaultDbConnection implements DbConnection {
    */
   @Override
   public void release() {
+    if (isStreaming()) {
+      return;
+    }
     try {
       jdbcConnection.close();
     } catch (SQLException e) {
       throw new ConnectionClosingException(e);
     }
+  }
+
+  @Override public void beginStreaming() {
+    streaming = true;
+  }
+
+  @Override public boolean isStreaming() {
+    return streaming;
+  }
+
+  @Override public void endStreaming() {
+    streaming = false;
   }
 }

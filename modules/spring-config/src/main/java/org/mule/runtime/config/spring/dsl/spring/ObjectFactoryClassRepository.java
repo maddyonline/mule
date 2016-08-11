@@ -92,10 +92,6 @@ public class ObjectFactoryClassRepository {
     enhancer.setInterfaces(new Class[] {SmartFactoryBean.class});
     enhancer.setSuperclass(objectFactoryType);
     enhancer.setCallbackType(MethodInterceptor.class);
-    //If cache is used then the same class instance with the same callback instance will be repeated for the
-    //same ObjectFactory which prevents reusing the same ObjectFactory class for different components
-    enhancer.setUseCache(false);
-    enhancer.setSerialVersionUID(new Random(System.currentTimeMillis()).nextLong());
     Class factoryBeanClass = enhancer.createClass();
     Enhancer.registerStaticCallbacks(factoryBeanClass, new Callback[] {
         new MethodInterceptor() {

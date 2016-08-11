@@ -65,13 +65,13 @@ public class ObjectFactoryClassRepository {
       if (instancePostCreationFunctionOptional.isPresent()) {
         return objectFactoryClassCache.get(componentBuildingDefinition, () -> {
           return getObjectFactoryDynamicClass(componentBuildingDefinition, objectFactoryType, createdObjectType,
-                                              isLazyInitFunction, instancePostCreationFunctionOptional.get());
+                                              isLazyInitFunction, instancePostCreationFunctionOptional.get(), true);
         });
       } else {
         //instancePostCreationFunctionOptional is used within the intercepted method so we can't use a cache.
         return getObjectFactoryDynamicClass(componentBuildingDefinition, objectFactoryType, createdObjectType, isLazyInitFunction,
                                             (object) -> {
-                                            });
+                                            }, false);
       }
     } catch (ExecutionException e) {
       throw new MuleRuntimeException(e);
@@ -81,7 +81,8 @@ public class ObjectFactoryClassRepository {
   private Class<ObjectFactory> getObjectFactoryDynamicClass(final ComponentBuildingDefinition componentBuildingDefinition,
                                                             Class objectFactoryType, final Class createdObjectType,
                                                             final Supplier<Boolean> isLazyInitFunction,
-                                                            final Consumer<Object> instancePostCreationFunction) {
+                                                            final Consumer<Object> instancePostCreationFunction,
+                                                            boolean useCache) {
     /*
        We need this to allow spring create the object using a FactoryBean but using the object factory setters and getters so
        we create as FactoryBean a dynamic class that will have the same attributes and methods as the ObjectFactory that the user
@@ -92,6 +93,7 @@ public class ObjectFactoryClassRepository {
     enhancer.setInterfaces(new Class[] {SmartFactoryBean.class});
     enhancer.setSuperclass(objectFactoryType);
     enhancer.setCallbackType(MethodInterceptor.class);
+    enhancer.setUseCache(useCache);
     Class factoryBeanClass = enhancer.createClass();
     Enhancer.registerStaticCallbacks(factoryBeanClass, new Callback[] {
         new MethodInterceptor() {

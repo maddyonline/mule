@@ -40,100 +40,90 @@ import org.springframework.cglib.proxy.MethodProxy;
  *
  * @since 4.0
  */
-public class ObjectFactoryClassRepository
-{
+public class ObjectFactoryClassRepository {
 
-    private Cache<ComponentBuildingDefinition, Class<ObjectFactory>> objectFactoryClassCache = CacheBuilder.newBuilder().build();
+  private Cache<ComponentBuildingDefinition, Class<ObjectFactory>> objectFactoryClassCache = CacheBuilder.newBuilder().build();
 
 
-    /**
-     * Retrieves a {@link Class} for the {@link ObjectFactory} defined by the {@code objectFactoryType} parameter. Once acquired
-     * the {@code Class} instance should not be reused for another {@link ComponentBuildingDefinition}.
-     *
-     * @param componentBuildingDefinition          the definition on how to build the component
-     * @param objectFactoryType                    the {@link ObjectFactory} of the component
-     * @param createdObjectType                    the type of object created by the {@code ObjectFactory}
-     * @param isLazyInitFunction                   function that defines if the object created by the component can be created lazily
-     * @param instancePostCreationFunctionOptional function to do custom processing of the created instance by the {@code ObjectFactory}. When there's no need for post processing this value must be {@link Optional#empty()}
-     * @return the {@code FactoryBean} class to be used by spring for the provided configuration.
-     */
-    public Class<ObjectFactory> getObjectFactoryClass(ComponentBuildingDefinition componentBuildingDefinition,
-                                                      Class objectFactoryType,
-                                                      Class createdObjectType,
-                                                      Supplier<Boolean> isLazyInitFunction,
-                                                      Optional<Consumer<Object>> instancePostCreationFunctionOptional)
-    {
-        try
-        {
-            if (instancePostCreationFunctionOptional.isPresent())
-            {
-                return objectFactoryClassCache.get(componentBuildingDefinition, () -> {
-                    return getObjectFactoryDynamicClass(componentBuildingDefinition, objectFactoryType, createdObjectType, isLazyInitFunction, instancePostCreationFunctionOptional.get());
-                });
-            }
-            else
-            {
-                //instancePostCreationFunctionOptional is used within the intercepted method so we can't use a cache.
-                return getObjectFactoryDynamicClass(componentBuildingDefinition, objectFactoryType, createdObjectType, isLazyInitFunction, (object) -> {
-                });
-            }
-        }
-        catch (ExecutionException e)
-        {
-            throw new MuleRuntimeException(e);
-        }
-    }
-
-    private Class<ObjectFactory> getObjectFactoryDynamicClass(final ComponentBuildingDefinition componentBuildingDefinition, Class objectFactoryType, final Class createdObjectType, final Supplier<Boolean> isLazyInitFunction, final Consumer<Object> instancePostCreationFunction)
-    {
-        /*
-           We need this to allow spring create the object using a FactoryBean but using the object factory setters and getters so
-           we create as FactoryBean a dynamic class that will have the same attributes and methods as the ObjectFactory that the user
-           defined. This way our API does not expose spring specific classes.
-        */
-        Enhancer enhancer = new Enhancer();
-        //Use SmartFactoryBean since it's the only way to force spring to pre-instantiate FactoryBean for singletons
-        enhancer.setInterfaces(new Class[] {SmartFactoryBean.class});
-        enhancer.setSuperclass(objectFactoryType);
-        enhancer.setCallbackType(MethodInterceptor.class);
-        //If cache is used then the same class instance with the same callback instance will be repeated for the
-        //same ObjectFactory which prevents reusing the same ObjectFactory class for different components
-        enhancer.setUseCache(false);
-        enhancer.setSerialVersionUID(new Random(System.currentTimeMillis()).nextLong());
-        Class factoryBeanClass = enhancer.createClass();
-        Enhancer.registerStaticCallbacks(factoryBeanClass, new Callback[] {
-                new MethodInterceptor()
-                {
-                    @Override
-                    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable
-                    {
-                        if (method.getName().equals("isSingleton"))
-                        {
-                            return !componentBuildingDefinition.isPrototype();
-                        }
-                        if (method.getName().equals("getObjectType"))
-                        {
-                            return createdObjectType;
-                        }
-                        if (method.getName().equals("getObject"))
-                        {
-                            Object createdInstance = proxy.invokeSuper(obj, args);
-                            instancePostCreationFunction.accept(createdInstance);
-                            return createdInstance;
-                        }
-                        if (method.getName().equals("isPrototype"))
-                        {
-                            return componentBuildingDefinition.isPrototype();
-                        }
-                        if (method.getName().equals("isEagerInit"))
-                        {
-                            return !isLazyInitFunction.get();
-                        }
-                        return proxy.invokeSuper(obj, args);
-                    }
-                }
+  /**
+   * Retrieves a {@link Class} for the {@link ObjectFactory} defined by the {@code objectFactoryType} parameter. Once acquired
+   * the {@code Class} instance should not be reused for another {@link ComponentBuildingDefinition}.
+   *
+   * @param componentBuildingDefinition          the definition on how to build the component
+   * @param objectFactoryType                    the {@link ObjectFactory} of the component
+   * @param createdObjectType                    the type of object created by the {@code ObjectFactory}
+   * @param isLazyInitFunction                   function that defines if the object created by the component can be created lazily
+   * @param instancePostCreationFunctionOptional function to do custom processing of the created instance by the {@code ObjectFactory}. When there's no need for post processing this value must be {@link Optional#empty()}
+   * @return the {@code FactoryBean} class to be used by spring for the provided configuration.
+   */
+  public Class<ObjectFactory> getObjectFactoryClass(ComponentBuildingDefinition componentBuildingDefinition,
+                                                    Class objectFactoryType,
+                                                    Class createdObjectType,
+                                                    Supplier<Boolean> isLazyInitFunction,
+                                                    Optional<Consumer<Object>> instancePostCreationFunctionOptional) {
+    try {
+      if (instancePostCreationFunctionOptional.isPresent()) {
+        return objectFactoryClassCache.get(componentBuildingDefinition, () -> {
+          return getObjectFactoryDynamicClass(componentBuildingDefinition, objectFactoryType, createdObjectType,
+                                              isLazyInitFunction, instancePostCreationFunctionOptional.get());
         });
-        return factoryBeanClass;
+      } else {
+        //instancePostCreationFunctionOptional is used within the intercepted method so we can't use a cache.
+        return getObjectFactoryDynamicClass(componentBuildingDefinition, objectFactoryType, createdObjectType, isLazyInitFunction,
+                                            (object) -> {
+                                            });
+      }
+    } catch (ExecutionException e) {
+      throw new MuleRuntimeException(e);
     }
+  }
+
+  private Class<ObjectFactory> getObjectFactoryDynamicClass(final ComponentBuildingDefinition componentBuildingDefinition,
+                                                            Class objectFactoryType, final Class createdObjectType,
+                                                            final Supplier<Boolean> isLazyInitFunction,
+                                                            final Consumer<Object> instancePostCreationFunction) {
+    /*
+       We need this to allow spring create the object using a FactoryBean but using the object factory setters and getters so
+       we create as FactoryBean a dynamic class that will have the same attributes and methods as the ObjectFactory that the user
+       defined. This way our API does not expose spring specific classes.
+    */
+    Enhancer enhancer = new Enhancer();
+    //Use SmartFactoryBean since it's the only way to force spring to pre-instantiate FactoryBean for singletons
+    enhancer.setInterfaces(new Class[] {SmartFactoryBean.class});
+    enhancer.setSuperclass(objectFactoryType);
+    enhancer.setCallbackType(MethodInterceptor.class);
+    //If cache is used then the same class instance with the same callback instance will be repeated for the
+    //same ObjectFactory which prevents reusing the same ObjectFactory class for different components
+    enhancer.setUseCache(false);
+    enhancer.setSerialVersionUID(new Random(System.currentTimeMillis()).nextLong());
+    Class factoryBeanClass = enhancer.createClass();
+    Enhancer.registerStaticCallbacks(factoryBeanClass, new Callback[] {
+        new MethodInterceptor() {
+
+          @Override
+          public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+            if (method.getName().equals("isSingleton")) {
+              return !componentBuildingDefinition.isPrototype();
+            }
+            if (method.getName().equals("getObjectType")) {
+              return createdObjectType;
+            }
+            if (method.getName().equals("getObject")) {
+              Object createdInstance = proxy.invokeSuper(obj, args);
+              instancePostCreationFunction.accept(createdInstance);
+              return createdInstance;
+            }
+            if (method.getName().equals("isPrototype")) {
+              return componentBuildingDefinition.isPrototype();
+            }
+            if (method.getName().equals("isEagerInit")) {
+              return !isLazyInitFunction.get();
+            }
+            return proxy.invokeSuper(obj, args);
+          }
+        }
+    });
+    return factoryBeanClass;
+  }
 
 }

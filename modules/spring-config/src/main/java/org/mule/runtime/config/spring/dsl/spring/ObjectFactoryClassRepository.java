@@ -14,6 +14,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import java.lang.reflect.Method;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -42,6 +44,7 @@ import org.springframework.beans.factory.SmartFactoryBean;
 public class ObjectFactoryClassRepository {
 
   private Cache<ComponentBuildingDefinition, Class<ObjectFactory>> objectFactoryClassCache = CacheBuilder.newBuilder().build();
+  private List<Class> createdClasses = new LinkedList<>();
 
 
   /**
@@ -64,13 +67,13 @@ public class ObjectFactoryClassRepository {
       if (instancePostCreationFunctionOptional.isPresent()) {
         return objectFactoryClassCache.get(componentBuildingDefinition, () -> {
           return getObjectFactoryDynamicClass(componentBuildingDefinition, objectFactoryType, createdObjectType,
-                                              isLazyInitFunction, instancePostCreationFunctionOptional.get(), true);
+                                              isLazyInitFunction, instancePostCreationFunctionOptional.get());
         });
       } else {
         //instancePostCreationFunctionOptional is used within the intercepted method so we can't use a cache.
         return getObjectFactoryDynamicClass(componentBuildingDefinition, objectFactoryType, createdObjectType, isLazyInitFunction,
                                             (object) -> {
-                                            }, false);
+                                            });
       }
     } catch (ExecutionException e) {
       throw new MuleRuntimeException(e);
@@ -80,8 +83,7 @@ public class ObjectFactoryClassRepository {
   private Class<ObjectFactory> getObjectFactoryDynamicClass(final ComponentBuildingDefinition componentBuildingDefinition,
                                                             Class objectFactoryType, final Class createdObjectType,
                                                             final Supplier<Boolean> isLazyInitFunction,
-                                                            final Consumer<Object> instancePostCreationFunction,
-                                                            boolean useCache) {
+                                                            final Consumer<Object> instancePostCreationFunction) {
     /*
        We need this to allow spring create the object using a FactoryBean but using the object factory setters and getters so
        we create as FactoryBean a dynamic class that will have the same attributes and methods as the ObjectFactory that the user
@@ -92,8 +94,9 @@ public class ObjectFactoryClassRepository {
     enhancer.setInterfaces(new Class[] {SmartFactoryBean.class});
     enhancer.setSuperclass(objectFactoryType);
     enhancer.setCallbackType(MethodInterceptor.class);
-    enhancer.setUseCache(useCache);
+    enhancer.setUseCache(false);
     Class factoryBeanClass = enhancer.createClass();
+    createdClasses.add(factoryBeanClass);
     Enhancer.registerStaticCallbacks(factoryBeanClass, new Callback[] {
         new MethodInterceptor() {
 
@@ -108,6 +111,7 @@ public class ObjectFactoryClassRepository {
             if (method.getName().equals("getObject")) {
               Object createdInstance = proxy.invokeSuper(obj, args);
               instancePostCreationFunction.accept(createdInstance);
+
               return createdInstance;
             }
             if (method.getName().equals("isPrototype")) {
@@ -121,6 +125,10 @@ public class ObjectFactoryClassRepository {
         }
     });
     return factoryBeanClass;
+  }
+
+  public void destroy() {
+    createdClasses.stream().forEach(clazz -> Enhancer.registerStaticCallbacks(clazz, null));
   }
 
 }

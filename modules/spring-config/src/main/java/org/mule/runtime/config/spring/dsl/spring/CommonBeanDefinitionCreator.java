@@ -75,10 +75,11 @@ public class CommonBeanDefinitionCreator extends BeanDefinitionCreator {
       .add(DEFAULT_ES_ELEMENT_IDENTIFIER)
       .build();
 
-  private final ObjectFactoryClassRepository objectFactoryClassRepository = new ObjectFactoryClassRepository();
+  private final ObjectFactoryClassRepository objectFactoryClassRepository;
   private BeanDefinitionPostProcessor beanDefinitionPostProcessor;
 
-  public CommonBeanDefinitionCreator() {
+  public CommonBeanDefinitionCreator(ObjectFactoryClassRepository objectFactoryClassRepository) {
+    this.objectFactoryClassRepository = objectFactoryClassRepository;
     try {
       //TODO MULE-9728 - Provide a mechanism to hook per transport in the endpoint address parsing
       this.beanDefinitionPostProcessor = (BeanDefinitionPostProcessor) ClassUtils

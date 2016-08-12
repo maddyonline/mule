@@ -41,9 +41,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -72,7 +72,6 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
       new ConcurrentHashMap/* <String, List<Transformer>> */(8);
 
   private MuleContext muleContext;
-  private AtomicBoolean isInitialised = new AtomicBoolean(false);
 
   private final ReadWriteLock transformerResolversLock = new ReentrantReadWriteLock();
 
@@ -98,7 +97,6 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
    */
   @Override
   public void initialise() throws InitialisationException {
-    this.isInitialised.set(true);
     // no-op
 
     // This is called when the MuleContext starts up, and should only do initialisation for any state on this class, the lifecycle
@@ -112,6 +110,7 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
   public void dispose() {
     transformerListCache.clear();
     exactTransformerCache.clear();
+    registry.dispose();
   }
 
   @Override
@@ -473,16 +472,15 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
   }
 
   public void postObjectRegistrationActions(Object value) {
-    //registered transformers before initialisation are post processed by spring.
-    //if (isInitialised.get()) {
-    if (value instanceof TransformerResolver) {
-      registerTransformerResolver((TransformerResolver) value);
-    }
+    if (!registry.getRegistries().isEmpty() && !(registry.getRegistries().iterator().next() instanceof SimpleRegistry)) {
+      if (value instanceof TransformerResolver) {
+        registerTransformerResolver((TransformerResolver) value);
+      }
 
-    if (value instanceof Converter) {
-      notifyTransformerResolvers((Converter) value, ADDED);
+      if (value instanceof Converter) {
+        notifyTransformerResolvers((Converter) value, ADDED);
+      }
     }
-    //}
   }
 
   /**
@@ -491,6 +489,7 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
   @Override
   public void registerObject(String key, Object value) throws RegistrationException {
     registry.registerObject(key, value);
+
 
     postObjectRegistrationActions(value);
   }

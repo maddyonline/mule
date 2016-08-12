@@ -237,6 +237,12 @@ public class MuleArtifactContext extends AbstractXmlApplicationContext {
     }
   }
 
+  @Override
+  public void close() {
+    super.close();
+    beanDefinitionFactory.destroy();
+  }
+
   private static Resource[] convert(ConfigResource[] resources) {
     Resource[] configResources = new Resource[resources.length];
     for (int i = 0; i < resources.length; i++) {

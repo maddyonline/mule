@@ -738,7 +738,7 @@ public class DefaultMessageProcessorChainTestCase extends AbstractMuleContextTes
     MuleMessage result =
         process(DefaultMessageProcessorChain.from(muleContext, scatterGatherRouter),
                 new DefaultMuleEvent(event.getMessage(), event))
-            .getMessage();
+                    .getMessage();
     assertThat(result.getPayload(), instanceOf(List.class));
     List<MuleMessage> resultMessage = (List<MuleMessage>) result.getPayload();
     assertThat(resultMessage.stream().map(MuleMessage::getPayload).collect(Collectors.toList()).toArray(),

@@ -28,6 +28,8 @@ import org.mule.runtime.config.spring.ServerNotificationManagerConfigurator;
 import org.mule.runtime.config.spring.dsl.api.AttributeDefinition;
 import org.mule.runtime.config.spring.dsl.api.ComponentBuildingDefinition;
 import org.mule.runtime.config.spring.dsl.api.ComponentBuildingDefinitionProvider;
+import org.mule.runtime.config.spring.dsl.spring.ComponentObjectFactory;
+import org.mule.runtime.config.spring.dsl.api.ObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.ExpressionArgumentObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.ExpressionTransformerObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.IgnoreObjectMethodsObjectFactory;
@@ -45,18 +47,22 @@ import org.mule.runtime.config.spring.factories.ScatterGatherRouterFactoryBean;
 import org.mule.runtime.config.spring.factories.SubflowMessageProcessorChainFactoryBean;
 import org.mule.runtime.config.spring.factories.TransactionalMessageProcessorsFactoryBean;
 import org.mule.runtime.config.spring.factories.WatermarkFactoryBean;
+import org.mule.runtime.config.spring.util.SpringBeanLookup;
 import org.mule.runtime.core.api.MuleContext;
+import org.mule.runtime.core.api.component.LifecycleAdapter;
 import org.mule.runtime.core.api.config.ConfigurationExtension;
 import org.mule.runtime.core.api.config.MuleConfiguration;
 import org.mule.runtime.core.api.config.ThreadingProfile;
 import org.mule.runtime.core.api.exception.MessagingExceptionHandler;
 import org.mule.runtime.core.api.model.EntryPointResolver;
+import org.mule.runtime.core.api.model.EntryPointResolverSet;
 import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.api.retry.RetryPolicyTemplate;
 import org.mule.runtime.core.api.routing.filter.Filter;
 import org.mule.runtime.core.api.schedule.SchedulerFactory;
 import org.mule.runtime.core.api.source.MessageSource;
 import org.mule.runtime.core.api.transformer.Transformer;
+import org.mule.runtime.core.component.DefaultJavaComponent;
 import org.mule.runtime.core.construct.Flow;
 import org.mule.runtime.core.context.notification.ListenerSubscriptionPair;
 import org.mule.runtime.core.context.notification.ServerNotificationManager;
@@ -76,6 +82,8 @@ import org.mule.runtime.core.model.resolvers.ExplicitMethodEntryPointResolver;
 import org.mule.runtime.core.model.resolvers.MethodHeaderPropertyEntryPointResolver;
 import org.mule.runtime.core.model.resolvers.NoArgumentsEntryPointResolver;
 import org.mule.runtime.core.model.resolvers.ReflectionEntryPointResolver;
+import org.mule.runtime.core.object.PrototypeObjectFactory;
+import org.mule.runtime.core.object.SingletonObjectFactory;
 import org.mule.runtime.core.processor.AsyncDelegateMessageProcessor;
 import org.mule.runtime.core.processor.IdempotentRedeliveryPolicy;
 import org.mule.runtime.core.processor.ResponseMessageProcessorAdapter;
@@ -492,8 +500,78 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
 
     componentBuildingDefinitions.addAll(getTransformersBuildingDefinitions());
     componentBuildingDefinitions.addAll(getEntryPointResolversDefinitions());
+    componentBuildingDefinitions.addAll(getComponentsDefintions());
 
     return componentBuildingDefinitions;
+  }
+
+  private List<ComponentBuildingDefinition> getComponentsDefintions()
+  {
+    List<ComponentBuildingDefinition> buildingDefinitions = new ArrayList<>();
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("component")
+        .withTypeDefinition(fromType(DefaultJavaComponent.class))
+        .withObjectFactoryType(ComponentObjectFactory.class)
+            .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
+            .withSetterParameterDefinition("objectFactory", fromChildConfiguration(org.mule.runtime.core.api.object.ObjectFactory.class).build())
+            .withSetterParameterDefinition("entryPointResolverSet", fromChildConfiguration(EntryPointResolverSet.class).build())
+            .withSetterParameterDefinition("entryPointResolver", fromChildConfiguration(EntryPointResolver.class).build())
+            .withSetterParameterDefinition("singletonComponentLifecycleAdapter", fromChildConfiguration(LifecycleAdapter.class).build())
+        .build());
+
+    buildingDefinitions.add(baseDefinition.copy()
+        .withIdentifier("singleton-object")
+        .withTypeDefinition(fromType(SingletonObjectFactory.class))
+        .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
+        .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
+        .build());
+
+    buildingDefinitions.add(baseDefinition.copy()
+                                    .withIdentifier("prototype-object")
+                                    .withTypeDefinition(fromType(PrototypeObjectFactory.class))
+                                    .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
+                                    .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
+                                    .build());
+
+    buildingDefinitions.add(baseDefinition.copy()
+                                    .withIdentifier("spring-object")
+                                    .withTypeDefinition(fromType(SpringBeanLookup.class))
+                                    .withSetterParameterDefinition("bean", fromSimpleParameter("bean").build())
+                                    .build());
+
+    buildingDefinitions.add(baseDefinition.copy()
+                                    .withIdentifier("custom-lifecycle-adapter-factory")
+                                    .withTypeDefinition(fromConfigurationAttribute(CLASS_ATTRIBUTE))
+                                    .build());
+
+    return buildingDefinitions;
+    
+    //registerBeanDefinitionParser("component", new ComponentDelegatingDefinitionParser(DefaultJavaComponent.class));
+    //registerBeanDefinitionParser("pooled-component", new ComponentDelegatingDefinitionParser(PooledJavaComponent.class));
+    //
+    //// Simple Components
+    //registerBeanDefinitionParser("log-component",
+    //                             new SimpleComponentDefinitionParser(SimpleCallableJavaComponent.class, LogComponent.class));
+    //registerBeanDefinitionParser("null-component",
+    //                             new SimpleComponentDefinitionParser(SimpleCallableJavaComponent.class, NullComponent.class));
+    //registerBeanDefinitionParser("static-component", new StaticComponentDefinitionParser());
+    //registerIgnoredElement("return-data"); // Handled by StaticComponentDefinitionParser
+    //
+    //// We need to use DefaultJavaComponent for the echo component because some tests invoke EchoComponent with method name and
+    //// therefore we need an entry point resolver
+    //registerBeanDefinitionParser("echo-component",
+    //                             new SimpleComponentDefinitionParser(DefaultJavaComponent.class, EchoComponent.class));
+    // Object Factories
+    //registerBeanDefinitionParser("singleton-object",
+    //                             new ObjectFactoryDefinitionParser(SingletonObjectFactory.class, "objectFactory"));
+    //registerBeanDefinitionParser("prototype-object",
+    //                             new ObjectFactoryDefinitionParser(PrototypeObjectFactory.class, "objectFactory"));
+    //registerBeanDefinitionParser("spring-object", new ObjectFactoryDefinitionParser(SpringBeanLookup.class, "objectFactory"));
+    //
+    //// Life-cycle Adapters Factories
+    //registerBeanDefinitionParser("custom-lifecycle-adapter-factory", new ChildDefinitionParser("lifecycleAdapterFactory"));
   }
 
   private List<ComponentBuildingDefinition> getEntryPointResolversDefinitions() {

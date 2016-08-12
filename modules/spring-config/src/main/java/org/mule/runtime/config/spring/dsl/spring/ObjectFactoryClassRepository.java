@@ -19,11 +19,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 import org.springframework.beans.factory.SmartFactoryBean;
-import org.springframework.cglib.proxy.Callback;
-import org.springframework.cglib.proxy.Enhancer;
-import org.springframework.cglib.proxy.MethodInterceptor;
-import org.springframework.cglib.proxy.MethodProxy;
 
 /**
  * Repository for storing the dynamic class generated to mimic {@link org.springframework.beans.factory.FactoryBean}

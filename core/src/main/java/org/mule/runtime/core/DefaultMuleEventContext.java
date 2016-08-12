@@ -243,7 +243,7 @@ public class DefaultMuleEventContext implements MuleEventContext {
 
   @Override
   public MuleContext getMuleContext() {
-    return event.getMuleContext();
+    return muleContext;
   }
 
 }

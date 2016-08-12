@@ -7,6 +7,7 @@
 package org.mule.runtime.core.enricher;
 
 import static org.mule.runtime.core.DefaultMuleEvent.setCurrentEvent;
+
 import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.NonBlockingVoidMuleEvent;
 import org.mule.runtime.core.VoidMuleEvent;
@@ -200,7 +201,7 @@ public class MessageEnricher extends AbstractMessageProcessorOwner implements No
 
     @Override
     protected MuleEvent processResponse(MuleEvent response, final MuleEvent request) throws MuleException {
-      final ExpressionManager expressionManager = eventToEnrich.getMuleContext().getExpressionManager();
+      final ExpressionManager expressionManager = muleContext.getExpressionManager();
 
       if (response != null && !VoidMuleEvent.getInstance().equals(eventToEnrich)) {
         for (EnrichExpressionPair pair : enrichExpressionPairs) {

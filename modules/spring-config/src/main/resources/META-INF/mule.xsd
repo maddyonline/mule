@@ -1394,14 +1394,6 @@
     </xsd:element>
     <xsd:complexType name="abstractEntryPointResolverSetType"/>
 
-    <xsd:element name="legacy-entry-point-resolver-set" type="extensibleEntryPointResolverSet"
-                 substitutionGroup="abstract-entry-point-resolver-set">
-        <xsd:annotation>
-            <xsd:documentation>
-                An extensible set of entry point resolvers (which determine how a message is passed to a component in Java) that already contains resolvers to implement the standard logic. This is already provided by default and is only needed explicitly if it will be extended with other entry point resolvers. This element can be set on the model or component; the model value provides a default that individual component values can override.
-            </xsd:documentation>
-        </xsd:annotation>
-    </xsd:element>
     <xsd:element name="entry-point-resolver-set" type="extensibleEntryPointResolverSet"
                  substitutionGroup="abstract-entry-point-resolver-set">
         <xsd:annotation>

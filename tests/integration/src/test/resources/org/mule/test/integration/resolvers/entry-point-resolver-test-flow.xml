@@ -60,11 +60,4 @@
         </component>
     </flow>
 
-    <flow name="Legacy2">
-        <component>
-            <legacy-entry-point-resolver-set/>
-            <spring-object bean="target"/>
-        </component>
-    </flow>
-
 </mule>

@@ -18,12 +18,19 @@ import static org.mule.runtime.config.spring.dsl.api.TypeDefinition.fromType;
 import static org.mule.runtime.config.spring.dsl.processor.xml.CoreXmlNamespaceInfoProvider.CORE_NAMESPACE_NAME;
 import static org.mule.runtime.core.retry.policies.SimpleRetryPolicyTemplate.RETRY_COUNT_FOREVER;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.mule.runtime.config.spring.MuleConfigurationConfigurator;
 import org.mule.runtime.config.spring.NotificationConfig;
 import org.mule.runtime.config.spring.ServerNotificationManagerConfigurator;
 import org.mule.runtime.config.spring.dsl.api.AttributeDefinition;
 import org.mule.runtime.config.spring.dsl.api.ComponentBuildingDefinition;
 import org.mule.runtime.config.spring.dsl.api.ComponentBuildingDefinitionProvider;
+import org.mule.runtime.config.spring.dsl.processor.ExpressionArgumentObjectFactory;
+import org.mule.runtime.config.spring.dsl.processor.ExpressionTransformerObjectFactory;
+import org.mule.runtime.config.spring.dsl.processor.IgnoreObjectMethodsObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.MessageEnricherObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.MessageProcessorWrapperObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.RetryPolicyTemplateObjectFactory;
@@ -43,6 +50,7 @@ import org.mule.runtime.core.api.config.ConfigurationExtension;
 import org.mule.runtime.core.api.config.MuleConfiguration;
 import org.mule.runtime.core.api.config.ThreadingProfile;
 import org.mule.runtime.core.api.exception.MessagingExceptionHandler;
+import org.mule.runtime.core.api.model.EntryPointResolver;
 import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.api.retry.RetryPolicyTemplate;
 import org.mule.runtime.core.api.routing.filter.Filter;
@@ -58,6 +66,16 @@ import org.mule.runtime.core.exception.ChoiceMessagingExceptionStrategy;
 import org.mule.runtime.core.exception.DefaultMessagingExceptionStrategy;
 import org.mule.runtime.core.exception.RedeliveryExceeded;
 import org.mule.runtime.core.exception.RollbackMessagingExceptionStrategy;
+import org.mule.runtime.core.expression.transformers.BeanBuilderTransformer;
+import org.mule.runtime.core.expression.transformers.ExpressionArgument;
+import org.mule.runtime.core.expression.transformers.ExpressionTransformer;
+import org.mule.runtime.core.model.resolvers.ArrayEntryPointResolver;
+import org.mule.runtime.core.model.resolvers.CallableEntryPointResolver;
+import org.mule.runtime.core.model.resolvers.DefaultEntryPointResolverSet;
+import org.mule.runtime.core.model.resolvers.ExplicitMethodEntryPointResolver;
+import org.mule.runtime.core.model.resolvers.MethodHeaderPropertyEntryPointResolver;
+import org.mule.runtime.core.model.resolvers.NoArgumentsEntryPointResolver;
+import org.mule.runtime.core.model.resolvers.ReflectionEntryPointResolver;
 import org.mule.runtime.core.processor.AsyncDelegateMessageProcessor;
 import org.mule.runtime.core.processor.IdempotentRedeliveryPolicy;
 import org.mule.runtime.core.processor.ResponseMessageProcessorAdapter;
@@ -88,10 +106,33 @@ import org.mule.runtime.core.transaction.lookup.Resin3TransactionManagerLookupFa
 import org.mule.runtime.core.transaction.lookup.WeblogicTransactionManagerLookupFactory;
 import org.mule.runtime.core.transaction.lookup.WebsphereTransactionManagerLookupFactory;
 import org.mule.runtime.core.transformer.AbstractTransformer;
+import org.mule.runtime.core.transformer.codec.Base64Decoder;
+import org.mule.runtime.core.transformer.codec.Base64Encoder;
+import org.mule.runtime.core.transformer.codec.XmlEntityDecoder;
+import org.mule.runtime.core.transformer.codec.XmlEntityEncoder;
+import org.mule.runtime.core.transformer.compression.GZipCompressTransformer;
+import org.mule.runtime.core.transformer.compression.GZipUncompressTransformer;
+import org.mule.runtime.core.transformer.encryption.DecryptionTransformer;
+import org.mule.runtime.core.transformer.encryption.EncryptionTransformer;
+import org.mule.runtime.core.transformer.simple.AddFlowVariableTransformer;
+import org.mule.runtime.core.transformer.simple.AddPropertyTransformer;
+import org.mule.runtime.core.transformer.simple.AutoTransformer;
+import org.mule.runtime.core.transformer.simple.BeanToMap;
+import org.mule.runtime.core.transformer.simple.ByteArrayToHexString;
+import org.mule.runtime.core.transformer.simple.ByteArrayToObject;
+import org.mule.runtime.core.transformer.simple.ByteArrayToSerializable;
+import org.mule.runtime.core.transformer.simple.CombineCollectionsTransformer;
+import org.mule.runtime.core.transformer.simple.CopyPropertiesTransformer;
+import org.mule.runtime.core.transformer.simple.HexStringToByteArray;
+import org.mule.runtime.core.transformer.simple.MapToBean;
+import org.mule.runtime.core.transformer.simple.ObjectToByteArray;
+import org.mule.runtime.core.transformer.simple.ObjectToString;
+import org.mule.runtime.core.transformer.simple.ParseTemplateTransformer;
+import org.mule.runtime.core.transformer.simple.RemoveFlowVariableTransformer;
+import org.mule.runtime.core.transformer.simple.RemovePropertyTransformer;
+import org.mule.runtime.core.transformer.simple.SerializableToByteArray;
 import org.mule.runtime.core.transformer.simple.SetPayloadMessageProcessor;
-
-import java.util.LinkedList;
-import java.util.List;
+import org.mule.runtime.core.transformer.simple.StringAppendTransformer;
 
 /**
  * {@link org.mule.runtime.config.spring.dsl.api.ComponentBuildingDefinition} definitions for the components provided by the core
@@ -449,11 +490,249 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withSetterParameterDefinition("listener", fromSimpleReferenceParameter("ref").build())
         .withSetterParameterDefinition("subscription", fromSimpleParameter("subscription").build()).build());
 
+    componentBuildingDefinitions.addAll(getTransformersBuildingDefinitions());
+    componentBuildingDefinitions.addAll(getEntryPointResolversDefinitions());
+
     return componentBuildingDefinitions;
   }
 
+  private List<ComponentBuildingDefinition> getEntryPointResolversDefinitions() {
+    List<ComponentBuildingDefinition> buildingDefinitions = new ArrayList<>();
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("custom-entry-point-resolver-set")
+        .withTypeDefinition(fromConfigurationAttribute(CLASS_ATTRIBUTE))
+        .withSetterParameterDefinition("entryPointResolvers", fromChildCollectionConfiguration(EntryPointResolver.class).build())
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("entry-point-resolver-set")
+        .withTypeDefinition(fromType(DefaultEntryPointResolverSet.class))
+        .withSetterParameterDefinition("entryPointResolvers", fromChildCollectionConfiguration(EntryPointResolver.class).build())
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("custom-entry-point-resolver")
+        .withTypeDefinition(fromConfigurationAttribute(CLASS_ATTRIBUTE))
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("callable-entry-point-resolver")
+        .withTypeDefinition(fromType(CallableEntryPointResolver.class))
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("method-entry-point-resolver")
+        .withTypeDefinition(fromType(ExplicitMethodEntryPointResolver.class))
+        .withSetterParameterDefinition("methods", fromChildCollectionConfiguration(String.class).build())
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("include-entry-point")
+        .withTypeDefinition(fromType(String.class))
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("exclude-entry-point")
+        .withTypeDefinition(fromType(String.class))
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("property-entry-point-resolver")
+        .withTypeDefinition(fromType(MethodHeaderPropertyEntryPointResolver.class))
+        .withSetterParameterDefinition("methodProperty", fromSimpleParameter("property").build())
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("property-entry-point-resolver")
+        .withTypeDefinition(fromType(MethodHeaderPropertyEntryPointResolver.class))
+        .withSetterParameterDefinition("methodProperty", fromSimpleParameter("property").build())
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("reflection-entry-point-resolver")
+        .withTypeDefinition(fromType(ReflectionEntryPointResolver.class))
+        .withSetterParameterDefinition("ignoredMethods",
+                                       fromChildConfiguration(List.class).withIdentifier("exclude-object-methods").build())
+        .withSetterParameterDefinition("ignoredMethods",
+                                       fromChildConfiguration(List.class).withIdentifier("exclude-entry-point").build())
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("exclude-object-methods")
+        .withTypeDefinition(fromType(List.class))
+        .withObjectFactoryType(IgnoreObjectMethodsObjectFactory.class)
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("no-arguments-entry-point-resolver")
+        .withTypeDefinition(fromType(NoArgumentsEntryPointResolver.class))
+        .build());
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("array-entry-point-resolver")
+        .withTypeDefinition(fromType(ArrayEntryPointResolver.class))
+        .build());
+    return buildingDefinitions;
+  }
+
+  private List<ComponentBuildingDefinition> getTransformersBuildingDefinitions() {
+    List<ComponentBuildingDefinition> transformerComponentBuildingDefinitions = new ArrayList<>();
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("base64-encoder-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(Base64Encoder.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("base64-decoder-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(Base64Decoder.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("xml-entity-encoder-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(XmlEntityEncoder.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("xml-entity-decoder-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(XmlEntityDecoder.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("gzip-compress-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(GZipCompressTransformer.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("gzip-uncompress-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(GZipUncompressTransformer.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("encrypt-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(EncryptionTransformer.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("decrypt-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(DecryptionTransformer.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("byte-array-to-hex-string-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(ByteArrayToHexString.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(Base64Decoder.class).build())
+        .withIdentifier("hex-string-to-byte-array-transformer").withTypeDefinition(fromType(HexStringToByteArray.class))
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("byte-array-to-object-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(ByteArrayToObject.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("object-to-byte-array-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(ObjectToByteArray.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("object-to-string-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(ObjectToString.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("byte-array-to-serializable-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(ByteArrayToSerializable.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("serializable-to-byte-array-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(SerializableToByteArray.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("byte-array-to-string-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(ObjectToString.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("string-to-byte-array-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(ObjectToByteArray.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("parse-template")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(ParseTemplateTransformer.class).build())
+        .withSetterParameterDefinition("location", fromSimpleParameter("location").build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("auto-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(AutoTransformer.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("map-to-bean-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(MapToBean.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("bean-to-map-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(BeanToMap.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("combine-collections-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(CombineCollectionsTransformer.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getMuleMessageTransformerBaseBuilder()
+        .withIdentifier("append-string-transformer")
+        .withTypeDefinition(fromType(StringAppendTransformer.class))
+        .withSetterParameterDefinition("message", fromSimpleParameter("message").build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("custom-transformer")
+        .withSetterParameterDefinition("transformerClass", fromSimpleParameter("class").build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("bean-builder-transformer")
+        .withSetterParameterDefinition("transformerClass", fromFixedValue(BeanBuilderTransformer.class).build())
+        .withSetterParameterDefinition("beanClass", fromSimpleParameter("beanClass").build())
+        .withSetterParameterDefinition("beanFactory", fromSimpleParameter("beanFactory").build())
+        .withSetterParameterDefinition("arguments", fromChildCollectionConfiguration(ExpressionArgument.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getMuleMessageTransformerBaseBuilder()
+        .withIdentifier("set-property")
+        .withTypeDefinition(fromType(AddPropertyTransformer.class))
+        .withSetterParameterDefinition("identifier", fromSimpleParameter("propertyName").build())
+        .withSetterParameterDefinition("value", fromSimpleParameter("value").build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getMuleMessageTransformerBaseBuilder()
+        .withIdentifier("set-variable")
+        .withTypeDefinition(fromType(AddFlowVariableTransformer.class))
+        .withSetterParameterDefinition("identifier", fromSimpleParameter("variableName").build())
+        .withSetterParameterDefinition("value", fromSimpleParameter("value").build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getMuleMessageTransformerBaseBuilder()
+        .withIdentifier("remove-property")
+        .withTypeDefinition(fromType(RemovePropertyTransformer.class))
+        .withSetterParameterDefinition("identifier", fromSimpleParameter("propertyName").build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getMuleMessageTransformerBaseBuilder()
+        .withIdentifier("remove-variable")
+        .withTypeDefinition(fromType(RemoveFlowVariableTransformer.class))
+        .withSetterParameterDefinition("identifier", fromSimpleParameter("variableName").build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getMuleMessageTransformerBaseBuilder()
+        .withIdentifier("copy-properties")
+        .withTypeDefinition(fromType(CopyPropertiesTransformer.class))
+        .withSetterParameterDefinition("propertyName", fromSimpleParameter("propertyName").build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("expression-transformer")
+        .withTypeDefinition(fromType(ExpressionTransformer.class))
+        .withObjectFactoryType(ExpressionTransformerObjectFactory.class)
+        .withSetterParameterDefinition("returnSourceIfNull", fromSimpleParameter("returnSourceIfNull").build())
+        .withSetterParameterDefinition("expression", fromSimpleParameter("expression").build())
+        .withSetterParameterDefinition("arguments", fromChildCollectionConfiguration(ExpressionArgument.class).build())
+        .build());
+    transformerComponentBuildingDefinitions.add(getTransformerBaseBuilder()
+        .withIdentifier("return-argument")
+        .withTypeDefinition(fromType(ExpressionArgument.class))
+        .withObjectFactoryType(ExpressionArgumentObjectFactory.class)
+        .withSetterParameterDefinition("optional", fromSimpleParameter("optional").build())
+        .withSetterParameterDefinition("expression", fromSimpleParameter("expression").build())
+        .build());
+
+
+    return transformerComponentBuildingDefinitions;
+  }
+
   public static ComponentBuildingDefinition.Builder getTransformerBaseBuilder() {
-    return baseDefinition.copy().withTypeDefinition(fromType(Transformer.class))
+    return baseDefinition.copy()
+        .withTypeDefinition(fromType(Transformer.class))
         .withObjectFactoryType(TransformerObjectFactory.class)
         .withSetterParameterDefinition("name", fromSimpleParameter("name").build())
         .withSetterParameterDefinition("ignoreBadInput", fromSimpleParameter("ignoreBadInput").build())
@@ -461,6 +740,13 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withSetterParameterDefinition("mimeType", fromSimpleParameter("mimeType").build())
         .withSetterParameterDefinition("returnClass", fromSimpleParameter("returnClass").build()).copy();
   }
+
+  public static ComponentBuildingDefinition.Builder getMuleMessageTransformerBaseBuilder() {
+    return baseDefinition.copy()
+        .withSetterParameterDefinition("encoding", fromSimpleParameter("encoding").build())
+        .withSetterParameterDefinition("mimeType", fromSimpleParameter("mimeType").build()).copy();
+  }
+
 
   public static ComponentBuildingDefinition.Builder getTransformerBaseBuilderForClass(Class<? extends AbstractTransformer> transformerClass) {
     return getTransformerBaseBuilder().withSetterParameterDefinition("transformerClass", fromFixedValue(transformerClass).build())

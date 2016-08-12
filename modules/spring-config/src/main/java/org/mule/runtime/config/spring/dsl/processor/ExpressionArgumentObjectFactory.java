@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) MuleSoft, Inc.  All rights reserved.  http://www.mulesoft.com
+ * The software in this package is published under the terms of the CPAL v1.0
+ * license, a copy of which has been included with this distribution in the
+ * LICENSE.txt file.
+ */
+package org.mule.runtime.config.spring.dsl.processor;
+
+import org.mule.runtime.config.spring.dsl.api.ObjectFactory;
+import org.mule.runtime.core.api.MuleContext;
+import org.mule.runtime.core.expression.ExpressionConfig;
+import org.mule.runtime.core.expression.transformers.ExpressionArgument;
+
+import javax.inject.Inject;
+
+/**
+ * {@link ObjectFactory} that constructs {@link ExpressionArgument} from the mule configuration.
+ *
+ * @since 4.0
+ */
+public class ExpressionArgumentObjectFactory implements ObjectFactory<ExpressionArgument> {
+
+  @Inject
+  private MuleContext muleContext;
+
+  private String expression;
+  private boolean optional;
+
+  @Override
+  public ExpressionArgument getObject() throws Exception {
+    ExpressionArgument expressionArgument = new ExpressionArgument(null, new ExpressionConfig(expression), optional);
+    expressionArgument.setMuleContext(muleContext);
+    return expressionArgument;
+  }
+
+  public void setExpression(String expression) {
+    this.expression = expression;
+  }
+
+  public void setOptional(boolean optional) {
+    this.optional = optional;
+  }
+}

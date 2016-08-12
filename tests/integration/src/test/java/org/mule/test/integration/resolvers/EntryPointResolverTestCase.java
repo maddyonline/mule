@@ -57,11 +57,6 @@ public class EntryPointResolverTestCase extends AbstractEntryPointResolverTestCa
   }
 
   @Test
-  public void testLegacyEntryPointResolversOnComponent() throws Exception {
-    doTest("Legacy2", "hello world", "callable");
-  }
-
-  @Test
   public void testReflectionEntryPointResolverWithNullElementInArray() throws Exception {
     // see MULE-3565
 

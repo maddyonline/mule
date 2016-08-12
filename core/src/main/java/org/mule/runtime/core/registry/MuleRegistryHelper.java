@@ -39,6 +39,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,6 +83,8 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
   private List<TransformerResolver> transformerResolvers = new ArrayList<>();
 
   private final ReadWriteLock transformersLock = new ReentrantReadWriteLock();
+
+  private Map<Object, Object> postProcessedObjects = new HashMap<>();
 
   /**
    * Transformers are registered on context start, then they are usually not unregistered
@@ -472,15 +476,16 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
   }
 
   public void postObjectRegistrationActions(Object value) {
-    //if (!registry.getRegistries().isEmpty() && !(registry.getRegistries().iterator().next() instanceof SimpleRegistry)) {
-    if (value instanceof TransformerResolver) {
-      registerTransformerResolver((TransformerResolver) value);
-    }
+    if (!postProcessedObjects.containsKey(value)) {
+      postProcessedObjects.put(value, value);
+      if (value instanceof TransformerResolver) {
+        registerTransformerResolver((TransformerResolver) value);
+      }
 
-    if (value instanceof Converter) {
-      notifyTransformerResolvers((Converter) value, ADDED);
+      if (value instanceof Converter) {
+        notifyTransformerResolvers((Converter) value, ADDED);
+      }
     }
-    //}
   }
 
   /**

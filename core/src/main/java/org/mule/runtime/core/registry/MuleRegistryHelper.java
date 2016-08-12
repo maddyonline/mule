@@ -472,15 +472,15 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
   }
 
   public void postObjectRegistrationActions(Object value) {
-    if (!registry.getRegistries().isEmpty() && !(registry.getRegistries().iterator().next() instanceof SimpleRegistry)) {
-      if (value instanceof TransformerResolver) {
-        registerTransformerResolver((TransformerResolver) value);
-      }
-
-      if (value instanceof Converter) {
-        notifyTransformerResolvers((Converter) value, ADDED);
-      }
+    //if (!registry.getRegistries().isEmpty() && !(registry.getRegistries().iterator().next() instanceof SimpleRegistry)) {
+    if (value instanceof TransformerResolver) {
+      registerTransformerResolver((TransformerResolver) value);
     }
+
+    if (value instanceof Converter) {
+      notifyTransformerResolvers((Converter) value, ADDED);
+    }
+    //}
   }
 
   /**

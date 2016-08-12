@@ -475,13 +475,13 @@ public class MuleRegistryHelper implements MuleRegistry, RegistryProvider {
   public void postObjectRegistrationActions(Object value) {
     //registered transformers before initialisation are post processed by spring.
     //if (isInitialised.get()) {
-      if (value instanceof TransformerResolver) {
-        registerTransformerResolver((TransformerResolver) value);
-      }
+    if (value instanceof TransformerResolver) {
+      registerTransformerResolver((TransformerResolver) value);
+    }
 
-      if (value instanceof Converter) {
-        notifyTransformerResolvers((Converter) value, ADDED);
-      }
+    if (value instanceof Converter) {
+      notifyTransformerResolvers((Converter) value, ADDED);
+    }
     //}
   }
 

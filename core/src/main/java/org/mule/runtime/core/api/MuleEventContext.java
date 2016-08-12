@@ -96,28 +96,6 @@ public interface MuleEventContext {
    */
   Transaction getCurrentTransaction();
 
-  /**
-   * Depending on the session state this methods either Passes an event synchronously to the next available Mule component in the
-   * pool or via the endpoint configured for the event
-   *
-   * @param message the event message payload to send
-   * @param endpointName The endpoint name to disptch the event through. This will be looked up first on the service configuration
-   *        and then on the mule manager configuration
-   * @return the return Message from the call or null if there was no result
-   * @throws MuleException if the event fails to be processed by the service or the transport for the endpoint
-   */
-  MuleMessage sendEvent(MuleMessage message, String endpointName) throws MuleException;
-
-  /**
-   * Requests a synchronous receive of an event on the service.
-   * 
-   * @param endpointName the endpoint identifying the endpointUri on which the event will be received
-   * @param timeout time in milliseconds before the request timesout
-   * @return The requested event or null if the request times out
-   * @throws MuleException if the request operation fails
-   */
-  MuleMessage requestEvent(String endpointName, long timeout) throws MuleException;
-
   FlowConstruct getFlowConstruct();
 
   /**
@@ -162,6 +140,4 @@ public interface MuleEventContext {
   int getTimeout();
 
   MuleSession getSession();
-
-  MuleContext getMuleContext();
 }

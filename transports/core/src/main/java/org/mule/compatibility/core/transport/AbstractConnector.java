@@ -27,6 +27,7 @@ import org.mule.compatibility.core.connector.EndpointConnectException;
 import org.mule.compatibility.core.connector.EndpointReplyToHandler;
 import org.mule.compatibility.core.context.notification.EndpointMessageNotification;
 import org.mule.compatibility.core.endpoint.outbound.OutboundNotificationMessageProcessor;
+import org.mule.compatibility.core.session.SerializeAndEncodeSessionHandler;
 import org.mule.compatibility.core.transformer.TransportTransformerUtils;
 import org.mule.compatibility.core.transport.service.TransportFactory;
 import org.mule.compatibility.core.transport.service.TransportServiceDescriptor;
@@ -76,7 +77,6 @@ import org.mule.runtime.core.processor.LaxAsyncInterceptingMessageProcessor;
 import org.mule.runtime.core.processor.chain.SimpleMessageProcessorChainBuilder;
 import org.mule.runtime.core.retry.async.AsynchronousRetryTemplate;
 import org.mule.runtime.core.routing.filters.WildcardFilter;
-import org.mule.compatibility.core.session.SerializeAndEncodeSessionHandler;
 import org.mule.runtime.core.transaction.TransactionCoordination;
 import org.mule.runtime.core.util.BeanUtils;
 import org.mule.runtime.core.util.ClassUtils;
@@ -2128,7 +2128,7 @@ public abstract class AbstractConnector extends AbstractAnnotatedObject implemen
     if (endpoint.getExchangePattern().hasResponse() || !getDispatcherThreadingProfile().isDoThreading()) {
       return new DispatcherMessageProcessor(endpoint);
     } else {
-      SimpleMessageProcessorChainBuilder builder = new SimpleMessageProcessorChainBuilder();
+      SimpleMessageProcessorChainBuilder builder = new SimpleMessageProcessorChainBuilder(muleContext);
       builder.setName("dispatcher processor chain for '" + endpoint.getAddress() + "'");
       LaxAsyncInterceptingMessageProcessor async = new LaxAsyncInterceptingMessageProcessor(() -> getDispatcherWorkManager());
       builder.chain(async);

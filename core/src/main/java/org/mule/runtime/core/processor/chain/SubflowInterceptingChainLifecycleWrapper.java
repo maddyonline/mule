@@ -50,7 +50,7 @@ public class SubflowInterceptingChainLifecycleWrapper extends InterceptingChainL
 
   @Override
   public MuleEvent process(MuleEvent event) throws MuleException {
-    FlowTraceManager flowTraceManager = flowConstruct.getMuleContext().getFlowTraceManager();
+    FlowTraceManager flowTraceManager = muleContext.getFlowTraceManager();
     flowTraceManager.onFlowStart(event, getSubFlowName());
 
     try {

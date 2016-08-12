@@ -6,6 +6,7 @@
  */
 package org.mule.runtime.core.processor.chain;
 
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.construct.FlowConstruct;
 import org.mule.runtime.core.api.processor.InterceptingMessageProcessor;
@@ -31,12 +32,12 @@ import java.util.List;
  */
 public class DefaultMessageProcessorChainBuilder extends AbstractMessageProcessorChainBuilder {
 
-  public DefaultMessageProcessorChainBuilder() {
-    // empty
+  public DefaultMessageProcessorChainBuilder(MuleContext muleContext) {
+    super(null, muleContext);
   }
 
   public DefaultMessageProcessorChainBuilder(FlowConstruct flowConstruct) {
-    this.flowConstruct = flowConstruct;
+    super(flowConstruct, flowConstruct.getMuleContext());
   }
 
   /**
@@ -50,8 +51,9 @@ public class DefaultMessageProcessorChainBuilder extends AbstractMessageProcesso
    * DefaultMessageProcessorChain using the temporary list and set it as a listener of the intercepting message processor and then
    * we continue with the algorithm
    */
+  @Override
   public MessageProcessorChain build() throws MuleException {
-    LinkedList<MessageProcessor> tempList = new LinkedList<MessageProcessor>();
+    LinkedList<MessageProcessor> tempList = new LinkedList<>();
 
     // Start from last but one message processor and work backwards
     for (int i = processors.size() - 1; i >= 0; i--) {
@@ -67,7 +69,7 @@ public class DefaultMessageProcessorChainBuilder extends AbstractMessageProcesso
             interceptingProcessor.setListener(createInnerChain(tempList));
           }
         }
-        tempList = new LinkedList<MessageProcessor>(Collections.singletonList(processor));
+        tempList = new LinkedList<>(Collections.singletonList(processor));
       } else {
         // Processor is not intercepting so we can invoke it using iteration
         // (add to temp list)
@@ -85,17 +87,27 @@ public class DefaultMessageProcessorChainBuilder extends AbstractMessageProcesso
   protected MessageProcessorChain buildMessageProcessorChain(DefaultMessageProcessorChain chain) {
     // Wrap with something that can apply lifecycle to all processors which are otherwise not visable from
     // DefaultMessageProcessorChain
-    return new InterceptingChainLifecycleWrapper(chain, processors, "wrapper for " + name);
+    final InterceptingChainLifecycleWrapper wrapper =
+        new InterceptingChainLifecycleWrapper(chain, processors, "wrapper for " + name);
+    wrapper.setMuleContext(muleContext);
+    return wrapper;
   }
 
   protected DefaultMessageProcessorChain createInnerChain(LinkedList<MessageProcessor> tempList) {
-    return new DefaultMessageProcessorChain("(inner iterating chain) of " + name, new ArrayList<MessageProcessor>(tempList));
+    final DefaultMessageProcessorChain chain =
+        new DefaultMessageProcessorChain("(inner iterating chain) of " + name, new ArrayList<>(tempList));
+    chain.setMuleContext(muleContext);
+    return chain;
   }
 
   protected DefaultMessageProcessorChain createOuterChain(LinkedList<MessageProcessor> tempList) {
-    return new DefaultMessageProcessorChain("(inner iterating chain) of " + name, new ArrayList<MessageProcessor>(tempList));
+    final DefaultMessageProcessorChain chain =
+        new DefaultMessageProcessorChain("(inner iterating chain) of " + name, new ArrayList<>(tempList));
+    chain.setMuleContext(muleContext);
+    return chain;
   }
 
+  @Override
   public DefaultMessageProcessorChainBuilder chain(MessageProcessor... processors) {
     for (MessageProcessor messageProcessor : processors) {
       this.processors.add(messageProcessor);
@@ -110,6 +122,7 @@ public class DefaultMessageProcessorChainBuilder extends AbstractMessageProcesso
     return this;
   }
 
+  @Override
   public DefaultMessageProcessorChainBuilder chain(MessageProcessorBuilder... builders) {
     for (MessageProcessorBuilder messageProcessorBuilder : builders) {
       this.processors.add(messageProcessorBuilder);

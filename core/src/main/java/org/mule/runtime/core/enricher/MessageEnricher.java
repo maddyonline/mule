@@ -94,7 +94,7 @@ public class MessageEnricher extends AbstractMessageProcessorOwner implements No
 
   public void setEnrichmentMessageProcessor(MessageProcessor enrichmentProcessor) {
     if (!(enrichmentProcessor instanceof MessageProcessorChain)) {
-      this.enrichmentProcessor = MessageProcessors.singletonChain(enrichmentProcessor);
+      this.enrichmentProcessor = MessageProcessors.singletonChain(muleContext, enrichmentProcessor);
     } else {
       this.enrichmentProcessor = enrichmentProcessor;
     }

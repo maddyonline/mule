@@ -7,13 +7,11 @@
 package org.mule.runtime.core;
 
 import org.mule.runtime.api.metadata.DataType;
-import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleEventContext;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleMessage;
 import org.mule.runtime.core.api.MuleSession;
-import org.mule.runtime.core.api.client.MuleClient;
 import org.mule.runtime.core.api.construct.FlowConstruct;
 import org.mule.runtime.core.api.transaction.Transaction;
 import org.mule.runtime.core.api.transformer.TransformerException;
@@ -39,13 +37,9 @@ public class DefaultMuleEventContext implements MuleEventContext {
   protected static final Logger logger = LoggerFactory.getLogger(DefaultMuleEventContext.class);
 
   private final MuleEvent event;
-  private final MuleContext muleContext;
-  private final MuleClient clientInterface;
 
   public DefaultMuleEventContext(MuleEvent event) {
     this.event = event;
-    this.muleContext = event.getMuleContext();
-    this.clientInterface = muleContext.getClient();
   }
 
   /**
@@ -141,35 +135,6 @@ public class DefaultMuleEventContext implements MuleEventContext {
   }
 
   /**
-   * Depending on the session state this methods either Passes an event synchronously to the next available Mule component in the
-   * pool or via the endpoint configured for the event
-   *
-   * @param message the event message payload to send
-   * @param endpointName The endpoint name to disptch the event through. This will be looked up first on the service configuration
-   *        and then on the mule manager configuration
-   * @return the return Message from the call or null if there was no result
-   * @throws org.mule.runtime.core.api.MuleException if the event fails to be processed by the service or the transport for the
-   *         endpoint
-   */
-  @Override
-  public MuleMessage sendEvent(MuleMessage message, String endpointName) throws MuleException {
-    return clientInterface.send(endpointName, message);
-  }
-
-  /**
-   * Requests a synchronous receive of an event on the service
-   *
-   * @param endpointName the endpoint identifing the endpointUri on ewhich the event will be received
-   * @param timeout time in milliseconds before the request timesout
-   * @return The requested event or null if the request times out
-   * @throws org.mule.runtime.core.api.MuleException if the request operation fails
-   */
-  @Override
-  public MuleMessage requestEvent(String endpointName, long timeout) throws MuleException {
-    return clientInterface.request(endpointName, timeout);
-  }
-
-  /**
    * @return the service descriptor of the service that received this event
    */
   @Override
@@ -240,10 +205,4 @@ public class DefaultMuleEventContext implements MuleEventContext {
   public String toString() {
     return event.toString();
   }
-
-  @Override
-  public MuleContext getMuleContext() {
-    return muleContext;
-  }
-
 }

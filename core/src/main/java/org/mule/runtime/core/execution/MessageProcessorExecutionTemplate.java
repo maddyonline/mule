@@ -7,6 +7,7 @@
 package org.mule.runtime.core.execution;
 
 import org.mule.runtime.core.api.MessagingException;
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.processor.MessageProcessor;
 
@@ -23,12 +24,12 @@ public class MessageProcessorExecutionTemplate {
     this.executionInterceptor = executionInterceptor;
   }
 
-  public static MessageProcessorExecutionTemplate createExceptionTransformerExecutionTemplate() {
-    return new MessageProcessorExecutionTemplate(new ExceptionToMessagingExceptionExecutionInterceptor());
+  public static MessageProcessorExecutionTemplate createExceptionTransformerExecutionTemplate(MuleContext context) {
+    return new MessageProcessorExecutionTemplate(new ExceptionToMessagingExceptionExecutionInterceptor(context));
   }
 
-  public static MessageProcessorExecutionTemplate createExecutionTemplate() {
-    return new MessageProcessorExecutionTemplate(new MessageProcessorNotificationExecutionInterceptor(new ExceptionToMessagingExceptionExecutionInterceptor()));
+  public static MessageProcessorExecutionTemplate createExecutionTemplate(MuleContext context) {
+    return new MessageProcessorExecutionTemplate(new MessageProcessorNotificationExecutionInterceptor(new ExceptionToMessagingExceptionExecutionInterceptor(context)));
   }
 
   public static MessageProcessorExecutionTemplate createNotificationExecutionTemplate() {

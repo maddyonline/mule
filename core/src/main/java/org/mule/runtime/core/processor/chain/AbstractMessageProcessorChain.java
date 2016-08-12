@@ -7,6 +7,7 @@
 package org.mule.runtime.core.processor.chain;
 
 import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.initialiseIfNeeded;
+
 import org.mule.runtime.core.AbstractAnnotatedObject;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
@@ -48,6 +49,7 @@ public abstract class AbstractMessageProcessorChain extends AbstractAnnotatedObj
   protected String name;
   protected List<MessageProcessor> processors;
   protected FlowConstruct flowConstruct;
+  protected MuleContext muleContext;
 
   public AbstractMessageProcessorChain(String name, List<MessageProcessor> processors) {
     this.name = name;
@@ -78,7 +80,7 @@ public abstract class AbstractMessageProcessorChain extends AbstractAnnotatedObj
 
   @Override
   public void start() throws MuleException {
-    List<MessageProcessor> startedProcessors = new ArrayList<MessageProcessor>();
+    List<MessageProcessor> startedProcessors = new ArrayList<>();
     try {
       for (MessageProcessor processor : processors) {
         if (processor instanceof Startable) {
@@ -180,12 +182,12 @@ public abstract class AbstractMessageProcessorChain extends AbstractAnnotatedObj
 
   @Override
   public void setMuleContext(MuleContext context) {
-
-    for (MessageProcessor processor : processors) {
+    for (Object processor : processors) {
       if (processor instanceof MuleContextAware) {
         ((MuleContextAware) processor).setMuleContext(context);
       }
     }
+    muleContext = context;
   }
 
 }

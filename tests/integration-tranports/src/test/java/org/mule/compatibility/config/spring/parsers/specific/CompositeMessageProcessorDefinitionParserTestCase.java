@@ -31,7 +31,8 @@ public class CompositeMessageProcessorDefinitionParserTestCase extends Functiona
     assertEquals(2, endpoint.getMessageProcessors().size());
 
     MessageProcessor endpointProcessor =
-        endpoint.getMessageProcessorsFactory().createInboundMessageProcessorChain(endpoint, null, new NullMessageProcessor());
+        endpoint.getMessageProcessorsFactory().createInboundMessageProcessorChain(endpoint, getTestFlow(),
+                                                                                  new NullMessageProcessor());
 
     assertEquals("01231abc2", endpointProcessor.process(getTestEvent("0")).getMessageAsString());
   }

@@ -11,6 +11,7 @@ import static org.mule.runtime.core.DefaultMuleEvent.setCurrentEvent;
 import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.NonBlockingVoidMuleEvent;
 import org.mule.runtime.core.api.MessagingException;
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleMessage;
@@ -120,5 +121,10 @@ class MessageProcessorNotificationExecutionInterceptor implements MessageProcess
             .fireNotification(new MessageProcessorNotification(flowConstruct, event, processor, exceptionThrown, action));
       }
     }
+  }
+
+  @Override
+  public void setMuleContext(MuleContext context) {
+    next.setMuleContext(context);
   }
 }

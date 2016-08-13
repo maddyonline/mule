@@ -9,6 +9,10 @@ package org.mule.runtime.core.work;
 
 import static org.mule.runtime.core.execution.MessageProcessorExecutionTemplate.createExecutionTemplate;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
@@ -16,10 +20,6 @@ import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.api.routing.ResponseTimeoutException;
 import org.mule.runtime.core.config.i18n.MessageFactory;
 import org.mule.runtime.core.execution.MessageProcessorExecutionTemplate;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of {@link AbstractMuleEventWork} that executes a {@link MessageProcessor} using this work's event. Instances of
@@ -40,7 +40,8 @@ public class ProcessingMuleEventWork extends AbstractMuleEventWork {
 
   public ProcessingMuleEventWork(MessageProcessor messageProcessor, MuleEvent muleEvent, MuleContext muleContext) {
     super(muleEvent);
-    messageProcessorExecutionTemplate = createExecutionTemplate(muleContext);
+    messageProcessorExecutionTemplate = createExecutionTemplate();
+    messageProcessorExecutionTemplate.setMuleContext(muleContext);
     this.messageProcessor = messageProcessor;
   }
 

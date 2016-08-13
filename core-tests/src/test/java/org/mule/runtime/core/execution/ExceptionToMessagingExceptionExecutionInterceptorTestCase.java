@@ -11,6 +11,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
@@ -18,12 +23,6 @@ import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.tck.junit4.AbstractMuleTestCase;
 import org.mule.tck.size.SmallTest;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
 @SmallTest
 @RunWith(MockitoJUnitRunner.class)
@@ -49,7 +48,8 @@ public class ExceptionToMessagingExceptionExecutionInterceptorTestCase extends A
 
     when(mockMessagingException.getFailingMessageProcessor()).thenCallRealMethod();
 
-    cut = new ExceptionToMessagingExceptionExecutionInterceptor(mockMuleContext);
+    cut = new ExceptionToMessagingExceptionExecutionInterceptor();
+    cut.setMuleContext(mockMuleContext);
   }
 
   @Test

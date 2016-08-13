@@ -8,6 +8,10 @@ package org.mule.runtime.core.processor.chain;
 
 import static org.mule.runtime.core.execution.MessageProcessorExecutionTemplate.createExecutionTemplate;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
@@ -15,13 +19,9 @@ import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.api.processor.MessageProcessorChain;
 import org.mule.runtime.core.execution.MessageProcessorExecutionTemplate;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class DefaultMessageProcessorChain extends AbstractMessageProcessorChain {
 
-  protected MessageProcessorExecutionTemplate messageProcessorExecutionTemplate;
+  protected MessageProcessorExecutionTemplate messageProcessorExecutionTemplate = createExecutionTemplate();
 
   protected DefaultMessageProcessorChain(List<MessageProcessor> processors) {
     super(null, processors);
@@ -40,9 +40,7 @@ public class DefaultMessageProcessorChain extends AbstractMessageProcessorChain 
   }
 
   public static MessageProcessorChain from(MuleContext muleContext, MessageProcessor messageProcessor) {
-    final DefaultMessageProcessorChain chain = new DefaultMessageProcessorChain(messageProcessor);
-    chain.setMuleContext(muleContext);
-    return chain;
+    return new DefaultMessageProcessorChain(messageProcessor);
   }
 
   public static MessageProcessorChain from(MuleContext muleContext, MessageProcessor... messageProcessors) throws MuleException {
@@ -63,6 +61,6 @@ public class DefaultMessageProcessorChain extends AbstractMessageProcessorChain 
   @Override
   public void setMuleContext(MuleContext context) {
     super.setMuleContext(context);
-    messageProcessorExecutionTemplate = createExecutionTemplate(muleContext);
+    messageProcessorExecutionTemplate.setMuleContext(context);
   }
 }

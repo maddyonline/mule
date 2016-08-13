@@ -6,6 +6,11 @@
  */
 package org.mule.runtime.core.processor.chain;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.construct.FlowConstruct;
@@ -13,11 +18,6 @@ import org.mule.runtime.core.api.processor.InterceptingMessageProcessor;
 import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.api.processor.MessageProcessorBuilder;
 import org.mule.runtime.core.api.processor.MessageProcessorChain;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * <p>
@@ -87,24 +87,15 @@ public class DefaultMessageProcessorChainBuilder extends AbstractMessageProcesso
   protected MessageProcessorChain buildMessageProcessorChain(DefaultMessageProcessorChain chain) {
     // Wrap with something that can apply lifecycle to all processors which are otherwise not visable from
     // DefaultMessageProcessorChain
-    final InterceptingChainLifecycleWrapper wrapper =
-        new InterceptingChainLifecycleWrapper(chain, processors, "wrapper for " + name);
-    wrapper.setMuleContext(muleContext);
-    return wrapper;
+    return new InterceptingChainLifecycleWrapper(chain, processors, "wrapper for " + name);
   }
 
   protected DefaultMessageProcessorChain createInnerChain(LinkedList<MessageProcessor> tempList) {
-    final DefaultMessageProcessorChain chain =
-        new DefaultMessageProcessorChain("(inner iterating chain) of " + name, new ArrayList<>(tempList));
-    chain.setMuleContext(muleContext);
-    return chain;
+    return new DefaultMessageProcessorChain("(inner iterating chain) of " + name, new ArrayList<>(tempList));
   }
 
   protected DefaultMessageProcessorChain createOuterChain(LinkedList<MessageProcessor> tempList) {
-    final DefaultMessageProcessorChain chain =
-        new DefaultMessageProcessorChain("(inner iterating chain) of " + name, new ArrayList<>(tempList));
-    chain.setMuleContext(muleContext);
-    return chain;
+    return new DefaultMessageProcessorChain("(inner iterating chain) of " + name, new ArrayList<>(tempList));
   }
 
   @Override

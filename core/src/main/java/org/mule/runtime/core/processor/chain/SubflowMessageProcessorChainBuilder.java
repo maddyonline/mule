@@ -7,7 +7,6 @@
 package org.mule.runtime.core.processor.chain;
 
 import org.mule.runtime.core.api.MuleContext;
-import org.mule.runtime.core.api.processor.MessageProcessorChain;
 
 /**
  * Constructs a custom chain for subflows using the subflow name as the chain name.
@@ -19,7 +18,7 @@ public class SubflowMessageProcessorChainBuilder extends DefaultMessageProcessor
   }
 
   @Override
-  protected MessageProcessorChain buildMessageProcessorChain(DefaultMessageProcessorChain chain) {
+  protected InterceptingChainLifecycleWrapper buildMessageProcessorChain(DefaultMessageProcessorChain chain) {
     return new SubflowInterceptingChainLifecycleWrapper(chain, processors, name);
   }
 }

@@ -6,13 +6,13 @@
  */
 package org.mule.runtime.core.execution;
 
-import java.util.Map.Entry;
-
 import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.execution.ExceptionContextProvider;
 import org.mule.runtime.core.api.processor.MessageProcessor;
+
+import java.util.Map.Entry;
 
 /**
  * Replace any exception thrown with a MessagingException
@@ -38,7 +38,7 @@ public class ExceptionToMessagingExceptionExecutionInterceptor implements Messag
 
   private MessagingException putContext(MessagingException messagingException, MessageProcessor failingMessageProcessor,
                                         MuleEvent event) {
-    for (ExceptionContextProvider exceptionContextProvider : event.getMuleContext().getExceptionContextProviders()) {
+    for (ExceptionContextProvider exceptionContextProvider : muleContext.getExceptionContextProviders()) {
       for (Entry<String, Object> contextInfoEntry : exceptionContextProvider.getContextInfo(event, failingMessageProcessor)
           .entrySet()) {
         if (!messagingException.getInfo().containsKey(contextInfoEntry.getKey())) {

@@ -8,10 +8,6 @@ package org.mule.runtime.core.processor.chain;
 
 import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.initialiseIfNeeded;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import org.mule.runtime.core.AbstractAnnotatedObject;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
@@ -33,6 +29,11 @@ import org.mule.runtime.core.api.processor.MessageProcessorPathElement;
 import org.mule.runtime.core.processor.NonBlockingMessageProcessor;
 import org.mule.runtime.core.util.NotificationUtils;
 import org.mule.runtime.core.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,6 @@ public abstract class AbstractMessageProcessorChain extends AbstractAnnotatedObj
   protected String name;
   protected List<MessageProcessor> processors;
   protected FlowConstruct flowConstruct;
-  protected MuleContext muleContext;
 
   public AbstractMessageProcessorChain(String name, List<MessageProcessor> processors) {
     this.name = name;
@@ -186,7 +186,6 @@ public abstract class AbstractMessageProcessorChain extends AbstractAnnotatedObj
         ((MuleContextAware) processor).setMuleContext(context);
       }
     }
-    muleContext = context;
   }
 
 }

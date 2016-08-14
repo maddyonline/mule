@@ -8,11 +8,12 @@ package org.mule.runtime.core.processor.chain;
 
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
-import org.mule.runtime.core.api.context.notification.FlowTraceManager;
+import org.mule.runtime.core.api.context.notification.FlowStackElement;
 import org.mule.runtime.core.api.processor.InterceptingMessageProcessor;
 import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.api.processor.MessageProcessorChain;
 import org.mule.runtime.core.api.processor.MessageProcessorPathElement;
+import org.mule.runtime.core.context.notification.DefaultFlowCallStack;
 import org.mule.runtime.core.util.NotificationUtils;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class SubflowInterceptingChainLifecycleWrapper extends InterceptingChainL
 
   private String subFlowName;
 
-  public SubflowInterceptingChainLifecycleWrapper(MessageProcessorChain chain, List<MessageProcessor> processors, String name) {
+  public SubflowInterceptingChainLifecycleWrapper(DefaultMessageProcessorChain chain, List<MessageProcessor> processors, String name) {
     super(chain, processors, name);
     this.subFlowName = name;
   }
@@ -50,13 +51,12 @@ public class SubflowInterceptingChainLifecycleWrapper extends InterceptingChainL
 
   @Override
   public MuleEvent process(MuleEvent event) throws MuleException {
-    FlowTraceManager flowTraceManager = muleContext.getFlowTraceManager();
-    flowTraceManager.onFlowStart(event, getSubFlowName());
+    ((DefaultFlowCallStack) event.getFlowCallStack()).push(new FlowStackElement(getSubFlowName(), null));
 
     try {
       return super.process(event);
     } finally {
-      flowTraceManager.onFlowComplete(event);
+      ((DefaultFlowCallStack) event.getFlowCallStack()).pop();
     }
   }
 

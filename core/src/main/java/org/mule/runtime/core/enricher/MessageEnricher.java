@@ -26,6 +26,7 @@ import org.mule.runtime.core.metadata.TypedValue;
 import org.mule.runtime.core.processor.AbstractMessageProcessorOwner;
 import org.mule.runtime.core.processor.AbstractRequestResponseMessageProcessor;
 import org.mule.runtime.core.processor.NonBlockingMessageProcessor;
+import org.mule.runtime.core.processor.chain.DefaultMessageProcessorChain;
 import org.mule.runtime.core.processor.chain.InterceptingChainLifecycleWrapper;
 import org.mule.runtime.core.util.StringUtils;
 
@@ -97,6 +98,10 @@ public class MessageEnricher extends AbstractMessageProcessorOwner implements No
       this.enrichmentProcessor = MessageProcessors.singletonChain(muleContext, enrichmentProcessor);
     } else {
       this.enrichmentProcessor = enrichmentProcessor;
+    }
+
+    if (this.enrichmentProcessor instanceof DefaultMessageProcessorChain) {
+      ((DefaultMessageProcessorChain) this.enrichmentProcessor).setTemplateMuleContext(muleContext);
     }
   }
 
@@ -212,5 +217,10 @@ public class MessageEnricher extends AbstractMessageProcessorOwner implements No
       return eventToEnrich;
     }
 
+  }
+
+  @Override
+  public void setMuleContext(MuleContext context) {
+    super.setMuleContext(context);
   }
 }

@@ -8,14 +8,13 @@ package org.mule.runtime.core.processor.chain;
 
 import static org.mule.runtime.core.execution.MessageProcessorExecutionTemplate.createExecutionTemplate;
 
-import java.util.List;
-
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.processor.MessageProcessor;
-import org.mule.runtime.core.api.processor.MessageProcessorChain;
 import org.mule.runtime.core.execution.MessageProcessorExecutionTemplate;
+
+import java.util.List;
 
 /**
  * Builder needs to return a composite rather than the first MessageProcessor in the chain. This is so that if this chain is
@@ -23,10 +22,10 @@ import org.mule.runtime.core.execution.MessageProcessorExecutionTemplate;
  */
 public class InterceptingChainLifecycleWrapper extends AbstractMessageProcessorChain {
 
-  private MessageProcessorChain chain;
+  private DefaultMessageProcessorChain chain;
   private MessageProcessorExecutionTemplate messageProcessorExecutionTemplate = createExecutionTemplate();
 
-  public InterceptingChainLifecycleWrapper(MessageProcessorChain chain, List<MessageProcessor> processors, String name) {
+  public InterceptingChainLifecycleWrapper(DefaultMessageProcessorChain chain, List<MessageProcessor> processors, String name) {
     super(name, processors);
     this.chain = chain;
   }
@@ -55,9 +54,15 @@ public class InterceptingChainLifecycleWrapper extends AbstractMessageProcessorC
     return messageProcessorExecutionTemplate.execute(event1 -> InterceptingChainLifecycleWrapper.super.process(event1), event);
   }
 
-  @Override
-  public void setMuleContext(MuleContext context) {
-    super.setMuleContext(context);
+  // @Override
+  // public void setMuleContext(MuleContext context) {
+  // // super.setMuleContext(context);
+  // messageProcessorExecutionTemplate.setMuleContext(context);
+  // muleContext = context;
+  // }
+
+  public void setTemplateMuleContext(MuleContext context) {
     messageProcessorExecutionTemplate.setMuleContext(context);
+    chain.setTemplateMuleContext(context);
   }
 }

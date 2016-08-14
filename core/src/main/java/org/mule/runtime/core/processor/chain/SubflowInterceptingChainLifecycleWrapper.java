@@ -27,7 +27,8 @@ public class SubflowInterceptingChainLifecycleWrapper extends InterceptingChainL
 
   private String subFlowName;
 
-  public SubflowInterceptingChainLifecycleWrapper(DefaultMessageProcessorChain chain, List<MessageProcessor> processors, String name) {
+  public SubflowInterceptingChainLifecycleWrapper(DefaultMessageProcessorChain chain, List<MessageProcessor> processors,
+                                                  String name) {
     super(chain, processors, name);
     this.subFlowName = name;
   }

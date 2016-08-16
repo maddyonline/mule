@@ -192,7 +192,7 @@ public class MuleEventToHttpRequest {
         return new InputStreamHttpEntity((InputStream) payload);
       } else {
         try {
-          return new InputStreamHttpEntity(new ByteArrayInputStream(muleEvent.getMessageAsBytes()));
+          return new InputStreamHttpEntity(new ByteArrayInputStream(muleEvent.getMessageAsBytes(muleContext)));
         } catch (Exception e) {
           throw new MessagingException(muleEvent, e);
         }
@@ -212,7 +212,7 @@ public class MuleEventToHttpRequest {
       }
 
       try {
-        return new ByteArrayHttpEntity(muleEvent.getMessageAsBytes());
+        return new ByteArrayHttpEntity(muleEvent.getMessageAsBytes(muleContext));
       } catch (Exception e) {
         throw new MessagingException(muleEvent, e);
       }

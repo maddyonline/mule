@@ -22,6 +22,7 @@ import org.mule.extension.http.internal.request.validator.HttpRequesterConfig;
 import org.mule.runtime.api.message.MuleMessage;
 import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.api.MessagingException;
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleRuntimeException;
@@ -73,9 +74,9 @@ public class HttpRequester {
   }
 
   public MuleMessage doRequest(MuleEvent muleEvent, HttpClient client, HttpRequesterRequestBuilder requestBuilder,
-                               boolean checkRetry)
+                               boolean checkRetry, MuleContext muleContext)
       throws MuleException {
-    HttpRequest httpRequest = eventToHttpRequest.create(muleEvent, requestBuilder, authentication);
+    HttpRequest httpRequest = eventToHttpRequest.create(muleEvent, requestBuilder, authentication, muleContext);
 
     HttpResponse response;
     try {
@@ -94,8 +95,8 @@ public class HttpRequester {
     MuleEvent responseEvent = new DefaultMuleEvent(org.mule.runtime.core.api.MuleMessage.builder(responseMessage).build(),
                                                    muleEvent, muleEvent.isSynchronous());
     if (resendRequest(responseEvent, checkRetry, authentication)) {
-      consumePayload(responseEvent);
-      responseMessage = doRequest(responseEvent, client, requestBuilder, false);
+      consumePayload(responseEvent, muleContext);
+      responseMessage = doRequest(responseEvent, client, requestBuilder, false, muleContext);
     }
     notificationHelper.fireNotification(this, muleEvent, httpRequest.getUri(), muleEvent.getFlowConstruct(), MESSAGE_REQUEST_END);
     responseValidator.validate(responseMessage, muleEvent.getMuleContext());
@@ -106,10 +107,10 @@ public class HttpRequester {
     return retry && authentication != null && authentication.shouldRetry(muleEvent);
   }
 
-  private void consumePayload(final MuleEvent event) {
+  private void consumePayload(final MuleEvent event, MuleContext muleContext) {
     if (event.getMessage().getPayload() instanceof InputStream) {
       try {
-        event.getMessageAsBytes();
+        event.getMessageAsBytes(muleContext);
       } catch (Exception e) {
         throw new MuleRuntimeException(e);
       }

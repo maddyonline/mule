@@ -238,8 +238,8 @@ public class DynamicOutboundEndpointTestCase extends AbstractMessageProcessorTes
 
     assertNotNull(result);
     assertEquals(TEST_MESSAGE + OutboundAppendTransformer.APPEND_STRING,
-                 MyMessageDispatcherFactory.dispatcher.sensedSendEvent.getMessageAsString());
-    assertEquals(RESPONSE_MESSAGE + ResponseAppendTransformer.APPEND_STRING, result.getMessageAsString());
+                 MyMessageDispatcherFactory.dispatcher.sensedSendEvent.getMessageAsString(muleContext));
+    assertEquals(RESPONSE_MESSAGE + ResponseAppendTransformer.APPEND_STRING, result.getMessageAsString(muleContext));
   }
 
   @Test(expected = UnsupportedOperationException.class)
@@ -289,7 +289,7 @@ public class DynamicOutboundEndpointTestCase extends AbstractMessageProcessorTes
   }
 
   protected void assertMessageSentEqual(MuleEvent event) throws MuleException {
-    assertEquals(TEST_MESSAGE, event.getMessageAsString());
+    assertEquals(TEST_MESSAGE, event.getMessageAsString(muleContext));
     assertEquals("value1", event.getMessage().getOutboundProperty("prop1"));
   }
 

@@ -65,7 +65,7 @@ public class UpdateExpressionWatermark extends Watermark implements Initialisabl
   protected Object getUpdatedValue(MuleEvent event) {
     try {
       return StringUtils.isEmpty(this.updateExpression) ? event.getFlowVariable(this.resolveVariable(event))
-          : WatermarkUtils.evaluate(this.updateExpression, event);
+          : WatermarkUtils.evaluate(this.updateExpression, event, muleContext);
     } catch (NotSerializableException e) {
       throw new IllegalArgumentException(e);
     }

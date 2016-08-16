@@ -11,9 +11,9 @@ import static org.mule.runtime.core.DefaultMuleEvent.setCurrentEvent;
 import static org.mule.runtime.core.api.debug.FieldDebugInfoFactory.createFieldDebugInfo;
 import static org.mule.runtime.core.context.notification.ConnectorMessageNotification.MESSAGE_REQUEST_BEGIN;
 import static org.mule.runtime.core.context.notification.ConnectorMessageNotification.MESSAGE_REQUEST_END;
+
 import org.mule.runtime.api.execution.BlockingCompletionHandler;
 import org.mule.runtime.api.execution.CompletionHandler;
-import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.api.MessagingException;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
@@ -25,7 +25,6 @@ import org.mule.runtime.core.api.context.MuleContextAware;
 import org.mule.runtime.core.api.context.WorkManager;
 import org.mule.runtime.core.api.debug.DebugInfoProvider;
 import org.mule.runtime.core.api.debug.FieldDebugInfo;
-import org.mule.runtime.core.api.debug.FieldDebugInfoFactory;
 import org.mule.runtime.core.api.lifecycle.Initialisable;
 import org.mule.runtime.core.api.lifecycle.InitialisationException;
 import org.mule.runtime.core.api.lifecycle.LifecycleUtils;
@@ -396,7 +395,7 @@ public class DefaultHttpRequester extends AbstractNonBlockingMessageProcessor
   private void consumePayload(final MuleEvent event) {
     if (event.getMessage().getPayload() instanceof InputStream) {
       try {
-        event.getMessageAsBytes();
+        event.getMessageAsBytes(muleContext);
       } catch (Exception e) {
         throw new MuleRuntimeException(e);
       }
@@ -516,31 +515,14 @@ public class DefaultHttpRequester extends AbstractNonBlockingMessageProcessor
   @Override
   public List<FieldDebugInfo<?>> getDebugInfo(final MuleEvent event) {
     final List<FieldDebugInfo<?>> fields = new ArrayList<>();
-    fields.add(createFieldDebugInfo(URI_DEBUG, String.class, new FieldDebugInfoFactory.FieldEvaluator() {
-
-      @Override
-      public Object evaluate() throws Exception {
-        return resolveURI(event);
-      }
-    }));
+    fields.add(createFieldDebugInfo(URI_DEBUG, String.class, () -> resolveURI(event)));
     fields.add(createFieldDebugInfo(METHOD_DEBUG, String.class, method, event));
     fields.add(createFieldDebugInfo(STREAMING_MODE_DEBUG, Boolean.class, requestStreamingMode, event));
-    fields.add(createFieldDebugInfo(SEND_BODY_DEBUG, HttpSendBodyMode.class, new FieldDebugInfoFactory.FieldEvaluator() {
-
-      @Override
-      public Object evaluate() throws Exception {
-        return HttpSendBodyMode.valueOf(sendBodyMode.resolveStringValue(event));
-      }
-    }));
+    fields.add(createFieldDebugInfo(SEND_BODY_DEBUG, HttpSendBodyMode.class,
+                                    () -> HttpSendBodyMode.valueOf(sendBodyMode.resolveStringValue(event))));
     fields.add(createFieldDebugInfo(FOLLOW_REDIRECTS_DEBUG, Boolean.class, followRedirects, event));
     fields.add(createFieldDebugInfo(PARSE_RESPONSE_DEBUG, Boolean.class, parseResponse, event));
-    fields.add(createFieldDebugInfo(RESPONSE_TIMEOUT_DEBUG, Integer.class, new FieldDebugInfoFactory.FieldEvaluator() {
-
-      @Override
-      public Object evaluate() throws Exception {
-        return resolveResponseTimeout(event);
-      }
-    }));
+    fields.add(createFieldDebugInfo(RESPONSE_TIMEOUT_DEBUG, Integer.class, () -> resolveResponseTimeout(event)));
     fields.add(createFieldDebugInfo(QUERY_PARAMS_DEBUG, List.class, getQueryParamsDebugInfo(event)));
     fields.add(getSecurityFieldDebugInfo(event));
 

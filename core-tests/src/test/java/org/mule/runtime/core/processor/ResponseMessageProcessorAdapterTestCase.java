@@ -26,7 +26,7 @@ public class ResponseMessageProcessorAdapterTestCase extends AbstractMuleContext
         new ResponseMessageProcessorAdapter(createStringAppendTransformer("3"));
     responseMessageProcessorAdapter.setMuleContext(muleContext);
     builder.chain(createStringAppendTransformer("1"), responseMessageProcessorAdapter, createStringAppendTransformer("2"));
-    assertEquals("0123", builder.build().process(getTestEvent("0")).getMessageAsString());
+    assertEquals("0123", builder.build().process(getTestEvent("0")).getMessageAsString(muleContext));
   }
 
   @Test
@@ -36,7 +36,7 @@ public class ResponseMessageProcessorAdapterTestCase extends AbstractMuleContext
         new ResponseMessageProcessorAdapter(new ReturnNullMP());
     responseMessageProcessorAdapter.setMuleContext(muleContext);
     builder.chain(createStringAppendTransformer("1"), responseMessageProcessorAdapter, createStringAppendTransformer("2"));
-    assertEquals("012", builder.build().process(getTestEvent("0")).getMessageAsString());
+    assertEquals("012", builder.build().process(getTestEvent("0")).getMessageAsString(muleContext));
   }
 
   @Test
@@ -47,7 +47,7 @@ public class ResponseMessageProcessorAdapterTestCase extends AbstractMuleContext
             .chain(createStringAppendTransformer("a"), createStringAppendTransformer("b")).build());
     responseMessageProcessorAdapter.setMuleContext(muleContext);
     builder.chain(createStringAppendTransformer("1"), responseMessageProcessorAdapter, createStringAppendTransformer("2"));
-    assertEquals("012ab", builder.build().process(getTestEvent("0")).getMessageAsString());
+    assertEquals("012ab", builder.build().process(getTestEvent("0")).getMessageAsString(muleContext));
   }
 
   @Test
@@ -58,7 +58,7 @@ public class ResponseMessageProcessorAdapterTestCase extends AbstractMuleContext
             .chain(createStringAppendTransformer("a"), createStringAppendTransformer("b"), new ReturnNullMP()).build());
     responseMessageProcessorAdapter.setMuleContext(muleContext);
     builder.chain(createStringAppendTransformer("1"), responseMessageProcessorAdapter, createStringAppendTransformer("2"));
-    assertEquals("012", builder.build().process(getTestEvent("0")).getMessageAsString());
+    assertEquals("012", builder.build().process(getTestEvent("0")).getMessageAsString(muleContext));
   }
 
   private StringAppendTransformer createStringAppendTransformer(String append) {

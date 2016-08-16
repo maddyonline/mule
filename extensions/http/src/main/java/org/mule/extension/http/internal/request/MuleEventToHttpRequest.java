@@ -23,6 +23,7 @@ import org.mule.extension.http.internal.request.validator.HttpRequesterConfig;
 import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.api.metadata.MediaType;
 import org.mule.runtime.core.api.MessagingException;
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.MuleMessage;
@@ -91,7 +92,8 @@ public class MuleEventToHttpRequest {
    * @return an {@HttpRequest} configured based on the parameters.
    * @throws MuleException if the request creation fails.
    */
-  public HttpRequest create(MuleEvent event, HttpRequesterRequestBuilder requestBuilder, HttpAuthentication authentication)
+  public HttpRequest create(MuleEvent event, HttpRequesterRequestBuilder requestBuilder, HttpAuthentication authentication,
+                            MuleContext muleContext)
       throws MuleException {
     HttpRequestBuilder builder = new HttpRequestBuilder();
 
@@ -123,7 +125,7 @@ public class MuleEventToHttpRequest {
 
     }
 
-    builder.setEntity(createRequestEntity(builder, event, this.method, requestBuilder.getParts()));
+    builder.setEntity(createRequestEntity(builder, event, this.method, requestBuilder.getParts(), muleContext));
 
     if (authentication != null) {
       authentication.authenticate(event, builder);
@@ -139,7 +141,7 @@ public class MuleEventToHttpRequest {
   }
 
   private HttpEntity createRequestEntity(HttpRequestBuilder requestBuilder, MuleEvent muleEvent, String resolvedMethod,
-                                         Map<String, DataHandler> parts)
+                                         Map<String, DataHandler> parts, MuleContext muleContext)
       throws MessagingException {
     boolean customSource = false;
     Object oldPayload = null;
@@ -155,7 +157,7 @@ public class MuleEventToHttpRequest {
     if (isEmptyBody(muleEvent, resolvedMethod, parts)) {
       entity = new EmptyHttpEntity();
     } else {
-      entity = createRequestEntityFromPayload(requestBuilder, muleEvent, parts);
+      entity = createRequestEntityFromPayload(requestBuilder, muleEvent, parts, muleContext);
     }
 
     if (customSource) {
@@ -184,7 +186,7 @@ public class MuleEventToHttpRequest {
   }
 
   private HttpEntity createRequestEntityFromPayload(HttpRequestBuilder requestBuilder, MuleEvent muleEvent,
-                                                    Map<String, DataHandler> parts)
+                                                    Map<String, DataHandler> parts, MuleContext muleContext)
       throws MessagingException {
     Object payload = muleEvent.getMessage().getPayload();
 
@@ -202,7 +204,7 @@ public class MuleEventToHttpRequest {
         return new InputStreamHttpEntity((InputStream) payload);
       } else {
         try {
-          return new InputStreamHttpEntity(new ByteArrayInputStream(muleEvent.getMessageAsBytes()));
+          return new InputStreamHttpEntity(new ByteArrayInputStream(muleEvent.getMessageAsBytes(muleContext)));
         } catch (Exception e) {
           throw new MessagingException(muleEvent, e);
         }
@@ -222,7 +224,7 @@ public class MuleEventToHttpRequest {
       }
 
       try {
-        return new ByteArrayHttpEntity(muleEvent.getMessageAsBytes());
+        return new ByteArrayHttpEntity(muleEvent.getMessageAsBytes(muleContext));
       } catch (Exception e) {
         throw new MessagingException(muleEvent, e);
       }

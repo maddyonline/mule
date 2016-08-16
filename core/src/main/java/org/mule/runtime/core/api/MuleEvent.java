@@ -6,11 +6,6 @@
  */
 package org.mule.runtime.core.api;
 
-import java.io.OutputStream;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.util.Set;
-
 import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.core.MessageExchangePattern;
 import org.mule.runtime.core.api.connector.ReplyToHandler;
@@ -24,6 +19,11 @@ import org.mule.runtime.core.api.transformer.TransformerException;
 import org.mule.runtime.core.config.DefaultMuleConfiguration;
 import org.mule.runtime.core.management.stats.ProcessingTime;
 import org.mule.runtime.core.message.Correlation;
+
+import java.io.OutputStream;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.util.Set;
 
 /**
  * Legacy implementation of {@link org.mule.runtime.api.message.MuleEvent}
@@ -82,7 +82,7 @@ public interface MuleEvent extends org.mule.runtime.api.message.MuleEvent {
    * @return the contents of the message as a byte array
    * @throws MuleException if the message cannot be converted into an array of bytes
    */
-  byte[] getMessageAsBytes() throws MuleException;
+  byte[] getMessageAsBytes(MuleContext muleContext) throws MuleException;
 
   /**
    * Transforms the message into the requested format. The transformer used is the one configured on the endpoint through which
@@ -93,7 +93,7 @@ public interface MuleEvent extends org.mule.runtime.api.message.MuleEvent {
    * @throws TransformerException if a failure occurs in the transformer
    * @see org.mule.runtime.core.api.transformer.Transformer if the transform fails or the outputtype is null
    */
-  <T> T transformMessage(Class<T> outputType) throws TransformerException;
+  <T> T transformMessage(Class<T> outputType, MuleContext muleContext) throws TransformerException;
 
   /**
    * Transforms the message into the requested format. The transformer used is the one configured on the endpoint through which
@@ -104,7 +104,7 @@ public interface MuleEvent extends org.mule.runtime.api.message.MuleEvent {
    * @throws TransformerException if a failure occurs in the transformer
    * @see org.mule.runtime.core.api.transformer.Transformer if the transform fails or the outputtype is null
    */
-  Object transformMessage(DataType outputType) throws TransformerException;
+  Object transformMessage(DataType outputType, MuleContext muleContext) throws TransformerException;
 
   /**
    * Returns the message transformed into it's recognised or expected format and then into a String. The transformer used is the
@@ -115,7 +115,7 @@ public interface MuleEvent extends org.mule.runtime.api.message.MuleEvent {
    * @throws TransformerException if a failure occurs in the transformer
    * @see org.mule.runtime.core.api.transformer.Transformer
    */
-  String transformMessageToString() throws TransformerException;
+  String transformMessageToString(MuleContext muleContext) throws TransformerException;
 
   /**
    * Returns the message contents as a string If necessary this will use the encoding set on the event
@@ -123,7 +123,7 @@ public interface MuleEvent extends org.mule.runtime.api.message.MuleEvent {
    * @return the message contents as a string
    * @throws MuleException if the message cannot be converted into a string
    */
-  String getMessageAsString() throws MuleException;
+  String getMessageAsString(MuleContext muleContext) throws MuleException;
 
   /**
    * Returns the message contents as a string
@@ -132,7 +132,7 @@ public interface MuleEvent extends org.mule.runtime.api.message.MuleEvent {
    * @return the message contents as a string
    * @throws MuleException if the message cannot be converted into a string
    */
-  String getMessageAsString(Charset encoding) throws MuleException;
+  String getMessageAsString(Charset encoding, MuleContext muleContext) throws MuleException;
 
   /**
    * Retrieves the service session for the current event

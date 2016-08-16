@@ -105,12 +105,12 @@ public abstract class AbstractUntilSuccessfulProcessingStrategy implements Until
       final MuleMessage message = event.getMessage();
       if (message instanceof MuleMessage) {
         if (message.getDataType().isStreamType()) {
-          event.getMessageAsBytes();
+          event.getMessageAsBytes(muleContext);
         } else {
           ensureSerializable(message);
         }
       } else {
-        event.getMessageAsBytes();
+        event.getMessageAsBytes(muleContext);
       }
     } catch (final Exception e) {
       throw new MessagingException(MessageFactory.createStaticMessage("Failed to prepare message for processing"), event, e,

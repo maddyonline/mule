@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import static org.mule.runtime.core.DefaultMuleEvent.setCurrentEvent;
 import static org.mule.runtime.core.MessageExchangePattern.REQUEST_RESPONSE;
 import static org.mule.runtime.core.api.config.MuleProperties.MULE_EVENT_TIMEOUT_PROPERTY;
+
 import org.mule.compatibility.core.api.endpoint.OutboundEndpoint;
 import org.mule.compatibility.core.api.transport.Connector;
 import org.mule.compatibility.core.api.transport.MessageDispatcher;
@@ -36,7 +37,6 @@ import org.mule.compatibility.core.transformer.simple.OutboundAppendTransformer;
 import org.mule.compatibility.core.transformer.simple.ResponseAppendTransformer;
 import org.mule.compatibility.core.transport.AbstractMessageDispatcher;
 import org.mule.runtime.api.execution.CompletionHandler;
-import org.mule.runtime.core.DefaultMuleEvent;
 import org.mule.runtime.core.MessageExchangePattern;
 import org.mule.runtime.core.NonBlockingVoidMuleEvent;
 import org.mule.runtime.core.VoidMuleEvent;
@@ -267,10 +267,10 @@ public class OutboundEndpointTestCase extends AbstractMessageProcessorTestCase {
     assertMessageSent(true);
 
     assertEquals(TEST_MESSAGE + OutboundAppendTransformer.APPEND_STRING,
-                 dispacher.sensedSendEvent.getMessageAsString());
+                 dispacher.sensedSendEvent.getMessageAsString(muleContext));
 
     assertNotNull(result);
-    assertEquals(RESPONSE_MESSAGE + ResponseAppendTransformer.APPEND_STRING, result.getMessageAsString());
+    assertEquals(RESPONSE_MESSAGE + ResponseAppendTransformer.APPEND_STRING, result.getMessageAsString(muleContext));
   }
 
   @Test
@@ -340,7 +340,7 @@ public class OutboundEndpointTestCase extends AbstractMessageProcessorTestCase {
       // We can't assert this for async because event gets rewritten
       assertEquals(testOutboundEvent, event);
     }
-    assertEquals(TEST_MESSAGE, event.getMessageAsString());
+    assertEquals(TEST_MESSAGE, event.getMessageAsString(muleContext));
     assertEquals("value1", event.getMessage().getOutboundProperty("prop1"));
     return event;
   }

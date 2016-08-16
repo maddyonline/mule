@@ -47,7 +47,7 @@ public interface MuleEventContext {
    *         as the expected type in the transformer
    * @see org.mule.runtime.core.api.transformer.Transformer
    */
-  Object transformMessage(DataType dataType) throws TransformerException;
+  Object transformMessage(DataType dataType, MuleContext muleContext) throws TransformerException;
 
   /**
    * Returns the message transformed into it's recognised or expected format. The transformer used is the one configured on the
@@ -60,7 +60,7 @@ public interface MuleEventContext {
    *         as the expected type in the transformer
    * @see org.mule.runtime.core.api.transformer.Transformer
    */
-  Object transformMessage(Class expectedType) throws TransformerException;
+  Object transformMessage(Class expectedType, MuleContext muleContext) throws TransformerException;
 
   /**
    * Returns the message transformed into it's recognised or expected format and then into a String. The transformer used is the
@@ -70,7 +70,7 @@ public interface MuleEventContext {
    * @throws TransformerException if a failure occurs in the transformer
    * @see org.mule.runtime.core.api.transformer.Transformer
    */
-  String transformMessageToString() throws TransformerException;
+  String transformMessageToString(MuleContext muleContext) throws TransformerException;
 
   /**
    * Returns the message contents as a string This method will use the encoding set on the event
@@ -78,7 +78,7 @@ public interface MuleEventContext {
    * @return the message contents as a string
    * @throws MuleException if the message cannot be converted into a string
    */
-  String getMessageAsString() throws MuleException;
+  String getMessageAsString(MuleContext muleContext) throws MuleException;
 
   /**
    * Returns the message contents as a string
@@ -87,7 +87,7 @@ public interface MuleEventContext {
    * @return the message contents as a string
    * @throws MuleException if the message cannot be converted into a string
    */
-  String getMessageAsString(Charset encoding) throws MuleException;
+  String getMessageAsString(Charset encoding, MuleContext muleContext) throws MuleException;
 
   /**
    * Returns the current transaction (if any) for the session

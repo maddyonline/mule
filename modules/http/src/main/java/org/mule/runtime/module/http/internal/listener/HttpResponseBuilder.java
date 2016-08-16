@@ -172,7 +172,7 @@ public class HttpResponseBuilder extends HttpMessageBuilder implements Initialis
         }
       } else {
         try {
-          ByteArrayHttpEntity byteArrayHttpEntity = new ByteArrayHttpEntity(event.getMessageAsBytes());
+          ByteArrayHttpEntity byteArrayHttpEntity = new ByteArrayHttpEntity(event.getMessageAsBytes(muleContext));
           resolveEncoding(httpResponseHeaderBuilder, existingTransferEncoding, existingContentLength,
                           supportsTransferEncoding(event), byteArrayHttpEntity);
           httpEntity = byteArrayHttpEntity;

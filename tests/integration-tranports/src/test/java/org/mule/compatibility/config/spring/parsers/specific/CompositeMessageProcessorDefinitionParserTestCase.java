@@ -34,7 +34,7 @@ public class CompositeMessageProcessorDefinitionParserTestCase extends Functiona
         endpoint.getMessageProcessorsFactory().createInboundMessageProcessorChain(endpoint, getTestFlow(),
                                                                                   new NullMessageProcessor());
 
-    assertEquals("01231abc2", endpointProcessor.process(getTestEvent("0")).getMessageAsString());
+    assertEquals("01231abc2", endpointProcessor.process(getTestEvent("0")).getMessageAsString(muleContext));
   }
 
 }

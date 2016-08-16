@@ -7,6 +7,7 @@
 package org.mule.runtime.core;
 
 import org.mule.runtime.api.metadata.DataType;
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleEventContext;
 import org.mule.runtime.core.api.MuleException;
@@ -69,8 +70,8 @@ public class DefaultMuleEventContext implements MuleEventContext {
    * @see org.mule.runtime.core.api.transformer.Transformer
    */
   @Override
-  public Object transformMessage(DataType dataType) throws TransformerException {
-    return event.transformMessage(dataType);
+  public Object transformMessage(DataType dataType, MuleContext muleContext) throws TransformerException {
+    return event.transformMessage(dataType, muleContext);
   }
 
   /**
@@ -85,8 +86,8 @@ public class DefaultMuleEventContext implements MuleEventContext {
    * @see org.mule.runtime.core.api.transformer.Transformer
    */
   @Override
-  public Object transformMessage(Class expectedType) throws TransformerException {
-    return event.transformMessage(DataType.fromType(expectedType));
+  public Object transformMessage(Class expectedType, MuleContext muleContext) throws TransformerException {
+    return event.transformMessage(DataType.fromType(expectedType), muleContext);
   }
 
   /**
@@ -96,8 +97,8 @@ public class DefaultMuleEventContext implements MuleEventContext {
    * @throws org.mule.runtime.core.api.MuleException if the message cannot be converted into a string
    */
   @Override
-  public String getMessageAsString(Charset encoding) throws MuleException {
-    return event.getMessageAsString(encoding);
+  public String getMessageAsString(Charset encoding, MuleContext muleContext) throws MuleException {
+    return event.getMessageAsString(encoding, muleContext);
   }
 
   /**
@@ -109,8 +110,8 @@ public class DefaultMuleEventContext implements MuleEventContext {
    * @see org.mule.runtime.core.api.transformer.Transformer
    */
   @Override
-  public String transformMessageToString() throws TransformerException {
-    return event.transformMessageToString();
+  public String transformMessageToString(MuleContext muleContext) throws TransformerException {
+    return event.transformMessageToString(muleContext);
   }
 
   /**
@@ -120,8 +121,8 @@ public class DefaultMuleEventContext implements MuleEventContext {
    * @throws org.mule.runtime.core.api.MuleException if the message cannot be converted into a string
    */
   @Override
-  public String getMessageAsString() throws MuleException {
-    return event.getMessageAsString();
+  public String getMessageAsString(MuleContext muleContext) throws MuleException {
+    return event.getMessageAsString(muleContext);
   }
 
   /**

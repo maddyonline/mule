@@ -32,7 +32,7 @@ public class TimeoutFunctionalTestCase extends FunctionalTestCase {
   public void flowAndSessionVarsAreNotRemovedAfterTimeout() throws Exception {
     final Latch serverLatch = new Latch();
 
-    getFunctionalTestComponent("server").setEventCallback((context, component) -> serverLatch.await());
+    getFunctionalTestComponent("server").setEventCallback((context, component, muleContext) -> serverLatch.await());
 
     FlowRunner runner = flowRunner("client").withPayload("<echo/>");
     runner.buildEvent().setTimeout(1);

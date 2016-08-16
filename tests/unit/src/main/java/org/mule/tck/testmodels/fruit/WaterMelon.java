@@ -6,8 +6,10 @@
  */
 package org.mule.tck.testmodels.fruit;
 
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
+import org.mule.runtime.core.api.context.MuleContextAware;
 import org.mule.runtime.core.api.lifecycle.Disposable;
 import org.mule.runtime.core.api.lifecycle.Startable;
 import org.mule.runtime.core.api.lifecycle.Stoppable;
@@ -17,7 +19,7 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WaterMelon implements Fruit, Startable, Stoppable, Disposable {
+public class WaterMelon implements Fruit, Startable, Stoppable, Disposable, MuleContextAware {
 
   /**
    * Serial version
@@ -35,6 +37,8 @@ public class WaterMelon implements Fruit, Startable, Stoppable, Disposable {
   private String brand;
   private String state = "void";
 
+  private MuleContext muleContext;
+
   public WaterMelon() {
     super();
   }
@@ -47,16 +51,18 @@ public class WaterMelon implements Fruit, Startable, Stoppable, Disposable {
     state = "initialised";
   }
 
+  @Override
   public void bite() {
     bitten = true;
   }
 
+  @Override
   public boolean isBitten() {
     return bitten;
   }
 
   public void myEventHandler(MuleEvent event) throws MuleException {
-    logger.debug("Water Melon received an event in MyEventHandler! MuleEvent says: " + event.getMessageAsString());
+    logger.debug("Water Melon received an event in MyEventHandler! MuleEvent says: " + event.getMessageAsString(muleContext));
     bite();
   }
 
@@ -88,14 +94,17 @@ public class WaterMelon implements Fruit, Startable, Stoppable, Disposable {
     return state;
   }
 
+  @Override
   public void start() {
     state = "started";
   }
 
+  @Override
   public void stop() {
     state = "stopped";
   }
 
+  @Override
   public void dispose() {
     state = "disposed";
   }
@@ -120,5 +129,10 @@ public class WaterMelon implements Fruit, Startable, Stoppable, Disposable {
     result = 31 * result + (brand != null ? brand.hashCode() : 0);
     result = 31 * result + state.hashCode();
     return result;
+  }
+
+  @Override
+  public void setMuleContext(MuleContext context) {
+    this.muleContext = context;
   }
 }

@@ -512,9 +512,9 @@ public class DefaultMuleEvent implements MuleEvent, DeserializationPostInitialis
   }
 
   @Override
-  public byte[] getMessageAsBytes() throws DefaultMuleException {
+  public byte[] getMessageAsBytes(MuleContext muleContext) throws DefaultMuleException {
     try {
-      return (byte[]) transformMessage(DataType.BYTE_ARRAY);
+      return (byte[]) transformMessage(DataType.BYTE_ARRAY, muleContext);
     } catch (Exception e) {
       throw new DefaultMuleException(CoreMessages.cannotReadPayloadAsBytes(message.getPayload()
           .getClass()
@@ -523,17 +523,17 @@ public class DefaultMuleEvent implements MuleEvent, DeserializationPostInitialis
   }
 
   @Override
-  public <T> T transformMessage(Class<T> outputType) throws TransformerException {
-    return (T) transformMessage(DataType.fromType(outputType));
+  public <T> T transformMessage(Class<T> outputType, MuleContext muleContext) throws TransformerException {
+    return (T) transformMessage(DataType.fromType(outputType), muleContext);
   }
 
   @Override
-  public Object transformMessage(DataType outputType) throws TransformerException {
+  public Object transformMessage(DataType outputType, MuleContext muleContext) throws TransformerException {
     if (outputType == null) {
       throw new TransformerException(CoreMessages.objectIsNull("outputType"));
     }
 
-    MuleMessage transformedMessage = getMuleContext().getTransformationService().transform(message, outputType);
+    MuleMessage transformedMessage = muleContext.getTransformationService().transform(message, outputType);
     if (message.getDataType().isStreamType()) {
       setMessage(transformedMessage);
     }
@@ -549,15 +549,15 @@ public class DefaultMuleEvent implements MuleEvent, DeserializationPostInitialis
    * @see org.mule.runtime.core.api.transformer.Transformer
    */
   @Override
-  public String transformMessageToString() throws TransformerException {
+  public String transformMessageToString(MuleContext muleContext) throws TransformerException {
     final DataType dataType = DataType.builder(getMessage().getDataType()).type(String.class).build();
-    return (String) transformMessage(dataType);
+    return (String) transformMessage(dataType, muleContext);
   }
 
   @Override
-  public String getMessageAsString() throws MuleException {
+  public String getMessageAsString(MuleContext muleContext) throws MuleException {
     return getMessageAsString(getMessage().getDataType().getMediaType().getCharset()
-        .orElse(getDefaultEncoding(getMuleContext())));
+        .orElse(getDefaultEncoding(muleContext)), muleContext);
   }
 
   /**
@@ -568,11 +568,10 @@ public class DefaultMuleEvent implements MuleEvent, DeserializationPostInitialis
    * @throws org.mule.runtime.core.api.MuleException if the message cannot be converted into a string
    */
   @Override
-  public String getMessageAsString(Charset encoding) throws MuleException {
+  public String getMessageAsString(Charset encoding, MuleContext muleContext) throws MuleException {
     try {
-      MuleMessage transformedMessage = getMuleContext().getTransformationService().transform(message,
-                                                                                             DataType.builder().type(String.class)
-                                                                                                 .charset(encoding).build());
+      MuleMessage transformedMessage = muleContext.getTransformationService()
+          .transform(message, DataType.builder().type(String.class).charset(encoding).build());
       if (message.getDataType().isStreamType()) {
         setMessage(transformedMessage);
       }

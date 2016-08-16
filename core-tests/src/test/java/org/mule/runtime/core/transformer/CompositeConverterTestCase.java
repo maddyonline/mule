@@ -158,6 +158,7 @@ public class CompositeConverterTestCase {
     MuleEvent event = mock(MuleEvent.class);
     MuleMessage message = mock(MuleMessage.class);
     MuleContext muleContext = mock(MuleContext.class);
+    compositeConverter.setMuleContext(muleContext);
     TransformationService transformationService = mock(TransformationService.class);
     doReturn(message).when(event).getMessage();
     doReturn(muleContext).when(event).getMuleContext();

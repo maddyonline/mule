@@ -6,8 +6,10 @@
  */
 package org.mule.runtime.core.component.simple;
 
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEventContext;
 import org.mule.runtime.core.api.component.simple.LogService;
+import org.mule.runtime.core.api.context.MuleContextAware;
 import org.mule.runtime.core.api.lifecycle.Callable;
 import org.mule.runtime.core.util.StringMessageUtils;
 
@@ -17,19 +19,27 @@ import org.slf4j.LoggerFactory;
 /**
  * <code>LogComponent</code> simply logs the content (or content length if it is a large message)
  */
-public class LogComponent implements Callable, LogService {
+public class LogComponent implements Callable, LogService, MuleContextAware {
 
   private static Logger logger = LoggerFactory.getLogger(LogComponent.class);
+  private MuleContext muleContext;
 
+  @Override
   public Object onCall(MuleEventContext context) throws Exception {
-    String contents = context.getMessageAsString();
+    String contents = context.getMessageAsString(muleContext);
     String msg = "Message received in service: " + context.getFlowConstruct().getName();
     msg = StringMessageUtils.getBoilerPlate(msg + ". Content is: '" + StringMessageUtils.truncate(contents, 100, true) + "'");
     log(msg);
     return context.getMessage();
   }
 
+  @Override
   public void log(String message) {
     logger.info(message);
+  }
+
+  @Override
+  public void setMuleContext(MuleContext context) {
+    this.muleContext = context;
   }
 }

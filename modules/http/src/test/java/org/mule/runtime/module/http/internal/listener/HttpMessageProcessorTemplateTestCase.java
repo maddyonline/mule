@@ -112,8 +112,9 @@ public class HttpMessageProcessorTemplateTestCase extends AbstractMuleTestCase {
 
     MuleEvent testEvent = mock(MuleEvent.class);
     when(testEvent.getMessage()).thenReturn(testMessage);
-    when(testEvent.getMuleContext()).thenReturn(mock(MuleContext.class, RETURNS_DEEP_STUBS));
-    when(testEvent.getMessageAsBytes()).thenReturn("".getBytes(UTF_8));
+    final MuleContext muleContext = mock(MuleContext.class, RETURNS_DEEP_STUBS);
+    when(testEvent.getMuleContext()).thenReturn(muleContext);
+    when(testEvent.getMessageAsBytes(muleContext)).thenReturn("".getBytes(UTF_8));
     return testEvent;
   }
 

@@ -117,7 +117,8 @@ public class HttpRequestOperations {
             .setAuthentication(config.getAuthentication()).setParseResponse(resolvedParseResponse)
             .setResponseTimeout(resolvedTimeout).setResponseValidator(resolvedValidator).setConfig(config).build();
 
-    return OperationResult.<Object, HttpResponseAttributes>builder(requester.doRequest(muleEvent, client, resolvedBuilder, true))
+    return OperationResult
+        .<Object, HttpResponseAttributes>builder(requester.doRequest(muleEvent, client, resolvedBuilder, true, muleContext))
         .build();
   }
 

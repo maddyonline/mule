@@ -16,15 +16,13 @@ import static org.mule.runtime.module.extension.internal.util.ExtensionsTestUtil
 import org.mule.runtime.core.api.registry.ServiceRegistry;
 import org.mule.runtime.core.registry.SpiServiceRegistry;
 import org.mule.runtime.core.util.IOUtils;
-import org.mule.runtime.extension.api.ExtensionManager;
 import org.mule.runtime.extension.api.introspection.ExtensionFactory;
 import org.mule.runtime.extension.api.introspection.ExtensionModel;
 import org.mule.runtime.extension.api.introspection.RuntimeExtensionModel;
 import org.mule.runtime.extension.api.introspection.declaration.fluent.ExtensionDeclarer;
 import org.mule.runtime.extension.api.introspection.declaration.spi.ModelEnricher;
-import org.mule.runtime.extension.api.manifest.ExtensionManifest;
-import org.mule.runtime.extension.api.runtime.ConfigurationInstance;
 import org.mule.runtime.extension.xml.dsl.api.property.XmlModelProperty;
+import org.mule.runtime.extension.xml.dsl.api.resolver.DslResolvingContext;
 import org.mule.runtime.module.extension.internal.DefaultDescribingContext;
 import org.mule.runtime.module.extension.internal.capability.xml.schema.SchemaGenerator;
 import org.mule.runtime.module.extension.internal.introspection.DefaultExtensionFactory;
@@ -45,15 +43,12 @@ import org.mule.test.petstore.extension.PetStoreConnector;
 import org.mule.test.subtypes.extension.SubTypesMappingConnector;
 import org.mule.test.vegan.extension.VeganExtension;
 
-import com.google.common.collect.ImmutableSet;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 
 import org.junit.Before;
@@ -130,33 +125,16 @@ public class SchemaGeneratorTestCase extends AbstractMuleTestCase {
   public void generate() throws Exception {
     XmlModelProperty capability = extensionUnderTest.getModelProperty(XmlModelProperty.class).get();
 
-    String schema = generator.generate(extensionUnderTest, capability, new SchemaTestExtensionManager());
+    String schema = generator.generate(extensionUnderTest, capability, new SchemaTestDslContext());
     compareXML(expectedSchema, schema);
   }
 
-  private static class SchemaTestExtensionManager implements ExtensionManager {
+  private static class SchemaTestDslContext implements DslResolvingContext {
 
     @Override
-    public void registerExtension(ExtensionManifest manifest, ClassLoader classLoader) {}
-
-    @Override
-    public Set<RuntimeExtensionModel> getExtensions() {
-      return ImmutableSet.copyOf(extensionModels.values());
-    }
-
-    @Override
-    public Optional<RuntimeExtensionModel> getExtension(String extensionName) {
-      return Optional.ofNullable(extensionModels.get(extensionName));
-    }
-
-    @Override
-    public <C> ConfigurationInstance<C> getConfiguration(String configurationProviderName, Object muleEvent) {
-      return null;
-    }
-
-    @Override
-    public <C> ConfigurationInstance<C> getConfiguration(ExtensionModel extensionModel, Object muleEvent) {
-      return null;
+    public Optional<ExtensionModel> getExtension(String name) {
+      return Optional.ofNullable(extensionModels.get(name));
     }
   }
+
 }

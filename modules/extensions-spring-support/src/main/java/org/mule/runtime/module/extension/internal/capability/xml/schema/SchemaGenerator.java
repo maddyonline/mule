@@ -10,14 +10,14 @@ import static org.mule.runtime.core.util.Preconditions.checkArgument;
 import static org.mule.runtime.core.util.Preconditions.checkState;
 import static org.mule.runtime.module.extension.internal.xml.SchemaConstants.MULE_NAMESPACE;
 import static org.mule.runtime.module.extension.internal.xml.SchemaConstants.MULE_PREFIX;
-import org.mule.runtime.extension.api.ExtensionManager;
 import org.mule.runtime.extension.api.introspection.ExtensionModel;
 import org.mule.runtime.extension.api.introspection.config.ConfigurationModel;
 import org.mule.runtime.extension.api.introspection.config.RuntimeConfigurationModel;
 import org.mule.runtime.extension.api.introspection.connection.ConnectionProviderModel;
 import org.mule.runtime.extension.api.introspection.operation.OperationModel;
-import org.mule.runtime.extension.xml.dsl.api.property.XmlModelProperty;
 import org.mule.runtime.extension.api.introspection.source.SourceModel;
+import org.mule.runtime.extension.xml.dsl.api.property.XmlModelProperty;
+import org.mule.runtime.extension.xml.dsl.api.resolver.DslResolvingContext;
 import org.mule.runtime.module.extension.internal.capability.xml.schema.builder.SchemaBuilder;
 import org.mule.runtime.module.extension.internal.capability.xml.schema.model.NamespaceFilter;
 import org.mule.runtime.module.extension.internal.capability.xml.schema.model.Schema;
@@ -46,9 +46,9 @@ public class SchemaGenerator {
     checkState(!StringUtils.isBlank(xmlModelProperty.getNamespace()), "xml model property cannot provide a blank namespace");
   }
 
-  public String generate(ExtensionModel extensionModel, XmlModelProperty xmlModelProperty, ExtensionManager extensionManager) {
+  public String generate(ExtensionModel extensionModel, XmlModelProperty xmlModelProperty, DslResolvingContext dslContext) {
     validate(extensionModel, xmlModelProperty);
-    SchemaBuilder schemaBuilder = SchemaBuilder.newSchema(extensionModel, xmlModelProperty, extensionManager);
+    SchemaBuilder schemaBuilder = SchemaBuilder.newSchema(extensionModel, xmlModelProperty, dslContext);
 
     new IdempotentExtensionWalker() {
 

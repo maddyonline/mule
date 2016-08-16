@@ -118,7 +118,7 @@ public final class DefaultExtensionManager
 
     if (extensionRegistry.containsExtension(extensionName)) {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("A extension of name '{}' (version: {} vendor {}) is already registered. Skipping...", extensionName,
+        LOGGER.debug("An extension of name '{}' (version: {} vendor {}) is already registered. Skipping...", extensionName,
                      extensionVersion, extensionVendor);
       }
     } else {

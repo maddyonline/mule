@@ -11,6 +11,7 @@ import static com.google.common.collect.ImmutableList.copyOf;
 import static java.util.Arrays.stream;
 import static org.apache.commons.lang.ArrayUtils.isEmpty;
 import static org.mule.runtime.core.config.MuleManifest.getProductVersion;
+import static org.mule.runtime.core.util.ClassUtils.withContextClassLoader;
 import org.mule.runtime.core.api.registry.ServiceRegistry;
 import org.mule.runtime.core.config.MuleManifest;
 import org.mule.runtime.core.registry.SpiServiceRegistry;
@@ -26,6 +27,7 @@ import org.mule.runtime.module.extension.internal.introspection.DefaultExtension
 import org.mule.runtime.module.extension.internal.introspection.describer.AnnotationsBasedDescriber;
 import org.mule.runtime.module.extension.internal.introspection.version.StaticVersionResolver;
 import org.mule.runtime.module.extension.internal.manager.ExtensionManagerAdapter;
+import org.mule.runtime.module.extension.internal.model.property.ImplementingTypeModelProperty;
 import org.mule.runtime.module.extension.internal.resources.AbstractResourcesGenerator;
 
 import java.io.File;
@@ -100,7 +102,10 @@ public class ExtensionsTestInfrastructureDiscoverer {
 
     ExtensionsTestInfrastructureResourcesGenerator generator =
         new ExtensionsTestInfrastructureResourcesGenerator(getResourceFactories(), generatedResourcesDirectory);
-    extensionManager.getExtensions().forEach(generator::generateFor);
+
+    extensionManager.getExtensions()
+      .forEach( e -> withContextClassLoader(e.getModelProperty(ImplementingTypeModelProperty.class).get().getType().getClassLoader(),
+                                            () -> generator.generateFor(e)));
     return generator.dumpAll();
   }
 

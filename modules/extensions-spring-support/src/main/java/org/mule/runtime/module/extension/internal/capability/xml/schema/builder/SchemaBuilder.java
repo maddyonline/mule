@@ -54,7 +54,6 @@ import org.mule.runtime.core.api.NestedProcessor;
 import org.mule.runtime.core.api.config.ThreadingProfile;
 import org.mule.runtime.core.util.StringUtils;
 import org.mule.runtime.core.util.ValueHolder;
-import org.mule.runtime.extension.api.ExtensionManager;
 import org.mule.runtime.extension.api.annotation.Extensible;
 import org.mule.runtime.extension.api.connectivity.OperationTransactionalAction;
 import org.mule.runtime.extension.api.introspection.ExtensionModel;
@@ -72,6 +71,7 @@ import org.mule.runtime.extension.api.introspection.source.SourceModel;
 import org.mule.runtime.extension.api.util.SubTypesMappingContainer;
 import org.mule.runtime.extension.xml.dsl.api.DslElementSyntax;
 import org.mule.runtime.extension.xml.dsl.api.property.XmlModelProperty;
+import org.mule.runtime.extension.xml.dsl.api.resolver.DslResolvingContext;
 import org.mule.runtime.extension.xml.dsl.api.resolver.DslSyntaxResolver;
 import org.mule.runtime.module.extension.internal.capability.xml.schema.model.Annotation;
 import org.mule.runtime.module.extension.internal.capability.xml.schema.model.Attribute;
@@ -142,18 +142,16 @@ public final class SchemaBuilder {
   private DslSyntaxResolver dslResolver;
   private SubTypesMappingContainer subTypesMapping;
   private Map<MetadataType, String> importedTypes;
-  private ExtensionManager extensionManager;
 
   public static SchemaBuilder newSchema(ExtensionModel extensionModel, XmlModelProperty xmlModelProperty,
-                                        ExtensionManager extensionManager) {
+                                        DslResolvingContext dslContext) {
 
     SchemaBuilder builder = new SchemaBuilder();
     builder.schema = new Schema();
     builder.schema.setTargetNamespace(xmlModelProperty.getNamespaceUri());
     builder.schema.setElementFormDefault(FormChoice.QUALIFIED);
     builder.schema.setAttributeFormDefault(FormChoice.UNQUALIFIED);
-    builder.withExtensionManager(extensionManager)
-        .withDslSyntaxResolver(new DslSyntaxResolver(extensionModel, new DefaultDslContext(extensionManager)))
+    builder.withDslSyntaxResolver(extensionModel, dslContext)
         .importXmlNamespace()
         .importSpringFrameworkNamespace()
         .importMuleNamespace()
@@ -171,13 +169,8 @@ public final class SchemaBuilder {
     return builder;
   }
 
-  private SchemaBuilder withExtensionManager(ExtensionManager extensionManager) {
-    this.extensionManager = extensionManager;
-    return this;
-  }
-
-  private SchemaBuilder withDslSyntaxResolver(DslSyntaxResolver dslSyntaxResolver) {
-    this.dslResolver = dslSyntaxResolver;
+  private SchemaBuilder withDslSyntaxResolver(ExtensionModel model, DslResolvingContext dslContext) {
+    this.dslResolver = new DslSyntaxResolver(model, dslContext);
     return this;
   }
 
@@ -189,7 +182,7 @@ public final class SchemaBuilder {
 
   private SchemaBuilder withImportedTypes(Map<MetadataType, String> importedTypes) {
     this.importedTypes = importedTypes;
-    importedTypes.values().forEach(origin -> extensionManager.getExtension(origin)
+    importedTypes.values().forEach(origin -> dslResolver.getContext().getExtension(origin)
         .ifPresent(this::registerExtensionImport));
     return this;
   }

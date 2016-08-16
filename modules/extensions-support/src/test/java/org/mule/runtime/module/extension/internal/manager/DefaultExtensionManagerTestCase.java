@@ -190,23 +190,15 @@ public class DefaultExtensionManagerTestCase extends AbstractMuleTestCase {
 
   @Test
   public void getExtensions() {
-    testEquals(getTestExtensions(), extensionsManager.getExtensions());
+    testEquals(asList(extensionModel1, extensionModel2), extensionsManager.getExtensions());
   }
 
-  //@Test
-  //public void getExtensionByNameAndVendor() {
-  //  assertThat(extensionsManager.getExtension(EXTENSION2_NAME, MULESOFT).get(), is(sameInstance(extensionModel2)));
-  //  assertThat(extensionsManager.getExtension(EXTENSION2_NAME, OTHER_VENDOR).get(),
-  //             is(sameInstance(extensionModel3WithRepeatedName)));
-  //  assertThat(extensionsManager.getExtension(EXTENSION1_NAME, OTHER_VENDOR).isPresent(), is(false));
-  //}
-
-  //@Test
-  //public void getExtensionsByName() {
-  //  Set<RuntimeExtensionModel> extensions = extensionsManager.getExtensions(EXTENSION1_NAME);
-  //  assertThat(extensions, hasSize(1));
-  //  assertThat(extensions.iterator().next(), is(sameInstance(extensionModel1)));
-  //}
+  @Test
+  public void getExtensionsByName() {
+    Optional<RuntimeExtensionModel> extension = extensionsManager.getExtension(EXTENSION1_NAME);
+    assertThat(extension.isPresent(), is(true));
+    assertThat(extension.get(), is(sameInstance(extensionModel1)));
+  }
 
   @Test
   public void contextClassLoaderKept() {
@@ -291,9 +283,9 @@ public class DefaultExtensionManagerTestCase extends AbstractMuleTestCase {
     List<String> extensionVendorList =
         extensionModels.stream().map(ExtensionModel::getVendor).distinct().collect(Collectors.toList());
 
-    assertThat(extensionModels.size(), is(3));
+    assertThat(extensionModels.size(), is(2));
     assertThat(extensionNameList.size(), is(2));
-    assertThat(extensionVendorList.size(), is(2));
+    assertThat(extensionVendorList.size(), is(1));
   }
 
   @Test
@@ -344,11 +336,6 @@ public class DefaultExtensionManagerTestCase extends AbstractMuleTestCase {
 
     when(extension1ConfigurationModel.getParameterModels()).thenReturn(asList(parameterModel1, parameterModel1));
     when(extension1ConfigurationModel.getConfigurationFactory().newInstance()).thenReturn(configInstance);
-  }
-
-  private List<RuntimeExtensionModel> getTestExtensions() {
-    return ImmutableList.<RuntimeExtensionModel>builder().add(extensionModel1).add(extensionModel2)
-        .add(extensionModel3WithRepeatedName).build();
   }
 
   private void testEquals(Collection<RuntimeExtensionModel> expected, Collection<RuntimeExtensionModel> obtained) {

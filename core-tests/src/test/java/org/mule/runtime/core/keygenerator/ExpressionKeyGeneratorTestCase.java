@@ -45,6 +45,7 @@ public class ExpressionKeyGeneratorTestCase extends AbstractMuleTestCase {
 
     keyGenerator = new ExpressionMuleEventKeyGenerator();
     keyGenerator.setExpression(EXPRESSION);
+    keyGenerator.setMuleContext(context);
   }
 
   private ExpressionManager expressionManager;

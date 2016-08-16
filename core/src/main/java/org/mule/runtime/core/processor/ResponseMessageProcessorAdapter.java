@@ -9,8 +9,7 @@ package org.mule.runtime.core.processor;
 import static java.util.Collections.singletonList;
 import static org.mule.runtime.core.execution.MessageProcessorExecutionTemplate.createExecutionTemplate;
 
-import java.util.List;
-
+import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleEvent;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.construct.FlowConstruct;
@@ -25,8 +24,12 @@ import org.mule.runtime.core.api.lifecycle.Stoppable;
 import org.mule.runtime.core.api.processor.MessageProcessor;
 import org.mule.runtime.core.execution.MessageProcessorExecutionTemplate;
 
+import java.util.List;
+
 public class ResponseMessageProcessorAdapter extends AbstractRequestResponseMessageProcessor
     implements Lifecycle, FlowConstructAware {
+
+  protected MessageProcessorExecutionTemplate messageProcessorExecutionTemplate = createExecutionTemplate();
 
   protected MessageProcessor responseProcessor;
   protected FlowConstruct flowConstruct;
@@ -50,7 +53,7 @@ public class ResponseMessageProcessorAdapter extends AbstractRequestResponseMess
       return response;
     } else {
       return new CopyOnNullNonBlockingProcessorExecutor(response, singletonList(responseProcessor),
-                                                        createExecutionTemplate(), true).execute();
+                                                        messageProcessorExecutionTemplate, true).execute();
     }
   }
 
@@ -106,4 +109,9 @@ public class ResponseMessageProcessorAdapter extends AbstractRequestResponseMess
     this.flowConstruct = flowConstruct;
   }
 
+  @Override
+  public void setMuleContext(MuleContext context) {
+    super.setMuleContext(context);
+    messageProcessorExecutionTemplate.setMuleContext(context);
+  }
 }

@@ -6,6 +6,8 @@
  */
 package org.mule.runtime.core.processor.chain;
 
+import static java.util.Collections.singletonList;
+
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.MuleException;
 import org.mule.runtime.core.api.construct.FlowConstruct;
@@ -15,7 +17,6 @@ import org.mule.runtime.core.api.processor.MessageProcessorBuilder;
 import org.mule.runtime.core.api.processor.MessageProcessorChain;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -71,7 +72,7 @@ public class DefaultMessageProcessorChainBuilder extends AbstractMessageProcesso
             interceptingProcessor.setListener(innerChain);
           }
         }
-        tempList = new LinkedList<>(Collections.singletonList(processor));
+        tempList = new LinkedList<>(singletonList(processor));
       } else {
         // Processor is not intercepting so we can invoke it using iteration
         // (add to temp list)

@@ -31,6 +31,7 @@ import org.mule.runtime.core.processor.NonBlockingMessageProcessor;
 class MessageProcessorNotificationExecutionInterceptor implements MessageProcessorExecutionInterceptor {
 
   private MessageProcessorExecutionInterceptor next;
+  private MuleContext muleContext;
 
   MessageProcessorNotificationExecutionInterceptor(MessageProcessorExecutionInterceptor next) {
     this.next = next;
@@ -43,7 +44,7 @@ class MessageProcessorNotificationExecutionInterceptor implements MessageProcess
 
   @Override
   public MuleEvent execute(final MessageProcessor messageProcessor, final MuleEvent event) throws MessagingException {
-    final ServerNotificationManager notificationManager = event.getMuleContext().getNotificationManager();
+    final ServerNotificationManager notificationManager = muleContext.getNotificationManager();
     final boolean fireNotification = event.isNotificationsEnabled();
     if (fireNotification) {
       fireNotification(notificationManager, event.getFlowConstruct(), event, messageProcessor,
@@ -125,6 +126,9 @@ class MessageProcessorNotificationExecutionInterceptor implements MessageProcess
 
   @Override
   public void setMuleContext(MuleContext context) {
-    next.setMuleContext(context);
+    this.muleContext = context;
+    if (next != null) {
+      next.setMuleContext(context);
+    }
   }
 }

@@ -38,7 +38,7 @@ public class DefaultMessageProcessorChain extends AbstractMessageProcessorChain 
     super(name, asList(processors));
   }
 
-  public static MessageProcessorChain from(MuleContext muleContext, MessageProcessor messageProcessor) {
+  public static DefaultMessageProcessorChain from(MuleContext muleContext, MessageProcessor messageProcessor) {
     return new DefaultMessageProcessorChain(messageProcessor);
   }
 

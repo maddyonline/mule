@@ -8,6 +8,7 @@
 package org.mule.runtime.config.spring.dsl.model;
 
 import static java.lang.Boolean.parseBoolean;
+import static java.lang.String.valueOf;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.ArrayUtils.addAll;
@@ -975,11 +976,12 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withConstructorParameterDefinition(fromSimpleParameter("maxActive").withDefaultValue(DEFAULT_MAX_POOL_ACTIVE).build())
         .withConstructorParameterDefinition(fromSimpleParameter("maxIdle").withDefaultValue(DEFAULT_MAX_POOL_IDLE).build())
         .withConstructorParameterDefinition(fromSimpleParameter("maxWait", value -> Long.valueOf((String) value))
-            .withDefaultValue(DEFAULT_MAX_POOL_WAIT).build())
+            .withDefaultValue(valueOf(DEFAULT_MAX_POOL_WAIT)).build())
         .withConstructorParameterDefinition(fromSimpleParameter("exhaustedAction", POOL_EXHAUSTED_ACTIONS::get)
-            .withDefaultValue(DEFAULT_POOL_EXHAUSTED_ACTION).build())
+            .withDefaultValue(valueOf(DEFAULT_POOL_EXHAUSTED_ACTION)).build())
         .withConstructorParameterDefinition(fromSimpleParameter("initialisationPolicy", POOL_INITIALISATION_POLICIES::get)
-            .withDefaultValue(DEFAULT_POOL_INITIALISATION_POLICY).build())
+            .withDefaultValue(valueOf(DEFAULT_POOL_INITIALISATION_POLICY)).build())
+        .withSetterParameterDefinition("disabled", fromSimpleParameter("disabled").build())
         .build());
 
     buildingDefinitions.add(baseDefinition

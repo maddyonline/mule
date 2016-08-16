@@ -6,13 +6,13 @@
  */
 package org.mule.runtime.config.spring.dsl.spring;
 
+import org.mule.runtime.api.config.PoolingProfile;
 import org.mule.runtime.config.spring.dsl.api.ObjectFactory;
 import org.mule.runtime.core.api.component.Component;
 import org.mule.runtime.core.api.component.LifecycleAdapterFactory;
 import org.mule.runtime.core.api.model.EntryPointResolver;
 import org.mule.runtime.core.api.model.EntryPointResolverSet;
 import org.mule.runtime.core.component.PooledJavaComponent;
-import org.mule.runtime.core.config.PoolingProfile;
 import org.mule.runtime.core.model.resolvers.DefaultEntryPointResolverSet;
 import org.mule.runtime.core.object.PrototypeObjectFactory;
 

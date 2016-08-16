@@ -174,6 +174,7 @@ import org.mule.runtime.core.transformer.simple.SetPayloadMessageProcessor;
 import org.mule.runtime.core.transformer.simple.StringAppendTransformer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -996,12 +997,14 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withIdentifier("singleton-object")
         .withTypeDefinition(fromType(SingletonObjectFactory.class))
         .withConstructorParameterDefinition(fromSimpleParameter("class").build())
+        .withConstructorParameterDefinition(fromChildConfiguration(Map.class).withDefaultValue(new HashMap<>()).build())
         .build());
 
     buildingDefinitions.add(baseDefinition.copy()
         .withIdentifier("prototype-object")
         .withTypeDefinition(fromType(PrototypeObjectFactory.class))
         .withConstructorParameterDefinition(fromSimpleParameter("class").build())
+        .withConstructorParameterDefinition(fromChildConfiguration(Map.class).withDefaultValue(new HashMap<>()).build())
         .build());
 
     buildingDefinitions.add(baseDefinition.copy()

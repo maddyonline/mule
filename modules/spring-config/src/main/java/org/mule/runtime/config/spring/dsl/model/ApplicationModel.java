@@ -92,6 +92,7 @@ public class ApplicationModel {
   public static final String DATA_WEAVE = "weave";
   public static final String CUSTOM_TRANSFORMER = "custom-transformer";
   public static final String DESCRIPTION_ELEMENT = "description";
+  public static final String PROPERTIES_ELEMENT = "properties";
 
   // TODO MULE-9638 Remove once all bean definitions parsers where migrated
   public static final String TEST_NAMESPACE = "test";
@@ -111,6 +112,7 @@ public class ApplicationModel {
   public static final String PARSER_TEST_NAMESPACE = "parsers-test";
   public static final String PROPERTY_PLACEHOLDER_ELEMENT = "property-placeholder";
   public static final String GLOBAL_PROPERTY = "global-property";
+  public static final String SPRING_ENTRY_ELEMENT = "entry";
 
   public static final ComponentIdentifier CHOICE_EXCEPTION_STRATEGY_IDENTIFIER =
       new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(CHOICE_EXCEPTION_STRATEGY).build();
@@ -148,6 +150,10 @@ public class ApplicationModel {
       new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(DESCRIPTION_ELEMENT).build();
   public static final ComponentIdentifier ANNOTATIONS_IDENTIFIER =
       new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(ANNOTATIONS).build();
+  public static final ComponentIdentifier PROPERTIES_IDENTIFIER =
+      new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(PROPERTIES_ELEMENT).build();
+  public static final ComponentIdentifier SPRING_ENTRY_IDENTIFIER =
+      new ComponentIdentifier.Builder().withNamespace(SPRING_NAMESPACE).withName(SPRING_ENTRY_ELEMENT).build();
 
   private static ImmutableSet<ComponentIdentifier> ignoredNameValidationComponentList =
       ImmutableSet.<ComponentIdentifier>builder()

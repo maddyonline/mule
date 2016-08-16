@@ -14,7 +14,9 @@ import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.DESCRIPT
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.DOC_DESCRIPTION_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.MULE_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.NAME_ATTRIBUTE;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.PROPERTIES_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.QUEUE_STORE;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_ENTRY_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.processor.xml.CoreXmlNamespaceInfoProvider.CORE_NAMESPACE_NAME;
 import static org.mule.runtime.config.spring.dsl.processor.xml.XmlCustomAttributeHandler.from;
 import static org.mule.runtime.config.spring.dsl.spring.CommonBeanDefinitionCreator.adaptFilterBeanDefinitions;
@@ -79,6 +81,8 @@ public class BeanDefinitionFactory {
    */
   private final ImmutableSet<ComponentIdentifier> customBuildersComponentIdentifiers = ImmutableSet.<ComponentIdentifier>builder()
       .add(new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(QUEUE_STORE).build())
+      .add(PROPERTIES_IDENTIFIER)
+      .add(SPRING_ENTRY_IDENTIFIER)
       .build();
 
 
@@ -198,6 +202,7 @@ public class BeanDefinitionFactory {
   private BeanDefinitionCreator buildComponentModelProcessorChainOfResponsability() {
     ExceptionStrategyRefBeanDefinitionCreator exceptionStrategyRefBeanDefinitionCreator =
         new ExceptionStrategyRefBeanDefinitionCreator();
+    PropertiesMapBeanDefinitionCreator propertiesMapBeanDefinitionCreator = new PropertiesMapBeanDefinitionCreator();
     FilterReferenceBeanDefinitionCreator filterReferenceBeanDefinitionCreator = new FilterReferenceBeanDefinitionCreator();
     ReferenceBeanDefinitionCreator referenceBeanDefinitionCreator = new ReferenceBeanDefinitionCreator();
     SimpleTypeBeanDefinitionCreator simpleTypeBeanDefinitionCreator = new SimpleTypeBeanDefinitionCreator();
@@ -205,6 +210,7 @@ public class BeanDefinitionFactory {
     MapEntryBeanDefinitionCreator mapEntryBeanDefinitionCreator = new MapEntryBeanDefinitionCreator();
     MapBeanDefinitionCreator mapBeanDefinitionCreator = new MapBeanDefinitionCreator();
     CommonBeanDefinitionCreator commonComponentModelProcessor = new CommonBeanDefinitionCreator(objectFactoryClassRepository);
+    propertiesMapBeanDefinitionCreator.setNext(exceptionStrategyRefBeanDefinitionCreator);
     exceptionStrategyRefBeanDefinitionCreator.setNext(exceptionStrategyRefBeanDefinitionCreator);
     exceptionStrategyRefBeanDefinitionCreator.setNext(filterReferenceBeanDefinitionCreator);
     filterReferenceBeanDefinitionCreator.setNext(referenceBeanDefinitionCreator);
@@ -213,7 +219,7 @@ public class BeanDefinitionFactory {
     collectionBeanDefinitionCreator.setNext(mapEntryBeanDefinitionCreator);
     mapEntryBeanDefinitionCreator.setNext(mapBeanDefinitionCreator);
     mapBeanDefinitionCreator.setNext(commonComponentModelProcessor);
-    return exceptionStrategyRefBeanDefinitionCreator;
+    return propertiesMapBeanDefinitionCreator;
   }
 
   /**

@@ -22,7 +22,8 @@ public class ResponseMessageProcessorAdapterTestCase extends AbstractMuleContext
   @Test
   public void testResponseAdaptorSingleMP() throws MuleException, Exception {
     DefaultMessageProcessorChainBuilder builder = new DefaultMessageProcessorChainBuilder(muleContext);
-    final ResponseMessageProcessorAdapter responseMessageProcessorAdapter = new ResponseMessageProcessorAdapter(createStringAppendTransformer("3"));
+    final ResponseMessageProcessorAdapter responseMessageProcessorAdapter =
+        new ResponseMessageProcessorAdapter(createStringAppendTransformer("3"));
     responseMessageProcessorAdapter.setMuleContext(muleContext);
     builder.chain(createStringAppendTransformer("1"), responseMessageProcessorAdapter, createStringAppendTransformer("2"));
     assertEquals("0123", builder.build().process(getTestEvent("0")).getMessageAsString());
@@ -52,8 +53,9 @@ public class ResponseMessageProcessorAdapterTestCase extends AbstractMuleContext
   @Test
   public void testResponseAdaptorNestedChainReturnsNull() throws MuleException, Exception {
     DefaultMessageProcessorChainBuilder builder = new DefaultMessageProcessorChainBuilder(muleContext);
-    final ResponseMessageProcessorAdapter responseMessageProcessorAdapter = new ResponseMessageProcessorAdapter(new DefaultMessageProcessorChainBuilder(muleContext)
-        .chain(createStringAppendTransformer("a"), createStringAppendTransformer("b"), new ReturnNullMP()).build());
+    final ResponseMessageProcessorAdapter responseMessageProcessorAdapter =
+        new ResponseMessageProcessorAdapter(new DefaultMessageProcessorChainBuilder(muleContext)
+            .chain(createStringAppendTransformer("a"), createStringAppendTransformer("b"), new ReturnNullMP()).build());
     responseMessageProcessorAdapter.setMuleContext(muleContext);
     builder.chain(createStringAppendTransformer("1"), responseMessageProcessorAdapter, createStringAppendTransformer("2"));
     assertEquals("012", builder.build().process(getTestEvent("0")).getMessageAsString());

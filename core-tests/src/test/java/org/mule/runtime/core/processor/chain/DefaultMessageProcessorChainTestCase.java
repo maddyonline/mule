@@ -684,7 +684,8 @@ public class DefaultMessageProcessorChainTestCase extends AbstractMuleContextTes
   @Test
   public void testResponseProcessor() throws MuleException, Exception {
     DefaultMessageProcessorChainBuilder builder = new DefaultMessageProcessorChainBuilder(muleContext);
-    final ResponseMessageProcessorAdapter responseMessageProcessorAdapter = new ResponseMessageProcessorAdapter(getAppendingMP("3"));
+    final ResponseMessageProcessorAdapter responseMessageProcessorAdapter =
+        new ResponseMessageProcessorAdapter(getAppendingMP("3"));
     responseMessageProcessorAdapter.setMuleContext(muleContext);
     builder.chain(getAppendingMP("1"), responseMessageProcessorAdapter, getAppendingMP("2"));
     assertThat(process(builder.build(), getTestEventUsingFlow("0")).getMessage().getPayload(), equalTo("0123"));
@@ -695,7 +696,8 @@ public class DefaultMessageProcessorChainTestCase extends AbstractMuleContextTes
   @Test
   public void testResponseProcessorInNestedChain() throws MuleException, Exception {
     DefaultMessageProcessorChainBuilder builder = new DefaultMessageProcessorChainBuilder(muleContext);
-    final ResponseMessageProcessorAdapter responseMessageProcessorAdapter = new ResponseMessageProcessorAdapter(getAppendingMP("c"));
+    final ResponseMessageProcessorAdapter responseMessageProcessorAdapter =
+        new ResponseMessageProcessorAdapter(getAppendingMP("c"));
     responseMessageProcessorAdapter.setMuleContext(muleContext);
     builder.chain(
                   getAppendingMP("1"), DefaultMessageProcessorChain.from(muleContext, getAppendingMP("a"),

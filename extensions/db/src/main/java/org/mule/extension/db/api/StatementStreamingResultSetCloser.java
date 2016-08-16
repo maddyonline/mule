@@ -24,6 +24,14 @@ public class StatementStreamingResultSetCloser extends AbstractStreamingResultSe
   private final ConcurrentHashMap<DbConnection, Set<ResultSet>> connectionResultSets = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<DbConnection, Object> connectionLocks = new ConcurrentHashMap<>();
 
+  public StatementStreamingResultSetCloser() {
+    super();
+  }
+
+  public StatementStreamingResultSetCloser(boolean autoCloseConnection) {
+    super(autoCloseConnection);
+  }
+
   /**
    * Closes all tracked {@link ResultSet}s for the passed {@code connection}.
    * 

@@ -29,6 +29,10 @@ public abstract class QueryParameter {
     return paramName;
   }
 
+  public void setParamName(String paramName) {
+    this.paramName = paramName;
+  }
+
   public JdbcType getType() {
     return type;
   }

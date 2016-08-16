@@ -28,7 +28,7 @@ public abstract class QueryDefinition {
   private String sql;
 
   @ParameterGroup
-  private QuerySettings settings;
+  private QuerySettings settings = new QuerySettings();
 
   @Parameter
   @Optional

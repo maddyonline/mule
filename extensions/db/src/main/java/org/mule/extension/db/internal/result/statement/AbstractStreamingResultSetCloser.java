@@ -23,6 +23,17 @@ public class AbstractStreamingResultSetCloser implements StreamingResultSetClose
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractStreamingResultSetCloser.class);
 
+  private final boolean autoCloseConnection;
+
+
+  public AbstractStreamingResultSetCloser() {
+    this(true);
+  }
+
+  public AbstractStreamingResultSetCloser(boolean autoClose) {
+    this.autoCloseConnection = autoClose;
+  }
+
   @Override
   public void close(DbConnection connection, ResultSet resultSet) {
     try {
@@ -31,7 +42,9 @@ public class AbstractStreamingResultSetCloser implements StreamingResultSetClose
       LOGGER.warn("Error attempting to close resultSet", e);
     } finally {
       connection.endStreaming();
-      connection.release();
+      if (autoCloseConnection) {
+        connection.release();
+      }
     }
   }
 }

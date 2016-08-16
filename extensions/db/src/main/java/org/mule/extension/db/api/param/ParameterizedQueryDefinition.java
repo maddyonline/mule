@@ -7,7 +7,6 @@
 package org.mule.extension.db.api.param;
 
 import static com.google.common.collect.ImmutableList.copyOf;
-import org.mule.extension.db.internal.domain.param.InputQueryParam;
 import org.mule.runtime.core.util.collection.ImmutableMapCollector;
 import org.mule.runtime.extension.api.annotation.Alias;
 import org.mule.runtime.extension.api.annotation.Parameter;
@@ -46,6 +45,25 @@ public class ParameterizedQueryDefinition extends QueryDefinition {
     }
 
     resolvedParameterValues.putAll(getParameterValues());
+    resolvedDefinition.getParameters().stream()
+        .filter(p -> p instanceof InputParameter)
+        .forEach(p -> {
+          InputParameter inputParameter = (InputParameter) p;
+          final String paramName = inputParameter.getParamName();
+          if (resolvedParameterValues.containsKey(paramName)) {
+            inputParameter.setValue(resolvedParameterValues.get(paramName));
+            resolvedParameterValues.remove(paramName);
+          }
+        });
+
+    resolvedParameterValues.entrySet().stream()
+        .map(entry -> {
+          InputParameter inputParameter = new InputParameter();
+          inputParameter.setParamName(entry.getKey());
+          inputParameter.setValue(entry.getValue());
+
+          return inputParameter;
+        }).forEach(p -> resolvedDefinition.parameters.add(p));
 
     return resolvedDefinition;
   }
@@ -60,7 +78,7 @@ public class ParameterizedQueryDefinition extends QueryDefinition {
 
   public Map<String, Object> getParameterValues() {
     return parameters.stream()
-        .filter(p -> p instanceof InputQueryParam)
-        .collect(new ImmutableMapCollector<>(QueryParameter::getParamName, p -> ((InputQueryParam) p).getValue()));
+        .filter(p -> p instanceof InputParameter)
+        .collect(new ImmutableMapCollector<>(QueryParameter::getParamName, p -> ((InputParameter) p).getValue()));
   }
 }

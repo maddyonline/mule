@@ -19,6 +19,15 @@ import java.sql.Statement;
  */
 public class SingleResultResultSetCloser extends AbstractStreamingResultSetCloser {
 
+
+  public SingleResultResultSetCloser() {
+    super();
+  }
+
+  public SingleResultResultSetCloser(boolean autoCloseConnection) {
+    super(autoCloseConnection);
+  }
+
   @Override
   public void close(DbConnection connection, ResultSet resultSet) {
     Statement statement = getStatement(resultSet);

@@ -6,37 +6,72 @@
  */
 package org.mule.runtime.config.spring.dsl.spring;
 
+import static org.mule.runtime.core.config.i18n.MessageFactory.createStaticMessage;
+
 import org.mule.runtime.config.spring.dsl.api.ObjectFactory;
+import org.mule.runtime.core.api.MuleRuntimeException;
 import org.mule.runtime.core.api.component.Component;
+import org.mule.runtime.core.api.component.LifecycleAdapterFactory;
 import org.mule.runtime.core.api.model.EntryPointResolver;
 import org.mule.runtime.core.api.model.EntryPointResolverSet;
 import org.mule.runtime.core.component.DefaultJavaComponent;
 import org.mule.runtime.core.model.resolvers.DefaultEntryPointResolverSet;
+import org.mule.runtime.core.model.resolvers.LegacyEntryPointResolverSet;
 import org.mule.runtime.core.object.PrototypeObjectFactory;
+import org.mule.runtime.core.object.SingletonObjectFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ComponentObjectFactory implements ObjectFactory<Component>
 {
     private Class clazz;
-    private org.mule.runtime.core.api.object.ObjectFactory objectFactory = new PrototypeObjectFactory();
-    private EntryPointResolverSet entryPointResolverSet = new DefaultEntryPointResolverSet();
+    private org.mule.runtime.core.api.object.ObjectFactory objectFactory;
+    private EntryPointResolverSet entryPointResolverSet = new LegacyEntryPointResolverSet();
     private EntryPointResolver entryPointResolver;
+    private LifecycleAdapterFactory lifecycleAdapterFactory;
+    private boolean usePrototypeObjectFactory = true;
+    private String staticData;
 
     @Override
     public Component getObject() throws Exception
     {
-        if (clazz !=  null)
+        if (clazz != null && objectFactory != null)
+        {
+            throw new MuleRuntimeException(createStaticMessage("Only one of class attribute or object factory is allowed in a component"));
+        }
+        if (clazz != null && usePrototypeObjectFactory)
         {
             objectFactory = new PrototypeObjectFactory(clazz);
         }
+        Map<Object, Object> properties = new HashMap<>();
+        if (staticData != null)
+        {
+            properties.put("data", staticData);
+        }
+        if (clazz != null)
+        {
+            objectFactory = new SingletonObjectFactory(clazz, properties);
+        }
         if (entryPointResolver != null)
         {
+            entryPointResolverSet = new DefaultEntryPointResolverSet();
             entryPointResolverSet.addEntryPointResolver(entryPointResolver);
         }
+        DefaultJavaComponent component;
         if (objectFactory != null)
         {
-            return new DefaultJavaComponent(objectFactory, entryPointResolverSet);
+            component = new DefaultJavaComponent(objectFactory, entryPointResolverSet);
         }
-        return new DefaultJavaComponent();
+        else
+        {
+            component = new DefaultJavaComponent();
+        }
+        if (lifecycleAdapterFactory != null)
+        {
+            component.setLifecycleAdapterFactory(lifecycleAdapterFactory);
+        }
+        return component;
     }
 
     public void setClazz(Class clazz)
@@ -57,5 +92,20 @@ public class ComponentObjectFactory implements ObjectFactory<Component>
     public void setEntryPointResolver(EntryPointResolver entryPointResolver)
     {
         this.entryPointResolver = entryPointResolver;
+    }
+
+    public void setLifecycleAdapterFactory(LifecycleAdapterFactory lifecycleAdapterFactory)
+    {
+        this.lifecycleAdapterFactory = lifecycleAdapterFactory;
+    }
+
+    public void setUsePrototypeObjectFactory(boolean usePrototypeObjectFactory)
+    {
+        this.usePrototypeObjectFactory = usePrototypeObjectFactory;
+    }
+
+    public void setStaticData(String staticData)
+    {
+        this.staticData = staticData;
     }
 }

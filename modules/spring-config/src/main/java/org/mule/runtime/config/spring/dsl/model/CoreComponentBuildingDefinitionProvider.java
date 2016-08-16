@@ -7,6 +7,13 @@
 
 package org.mule.runtime.config.spring.dsl.model;
 
+import static org.mule.runtime.api.config.PoolingProfile.DEFAULT_MAX_POOL_ACTIVE;
+import static org.mule.runtime.api.config.PoolingProfile.DEFAULT_MAX_POOL_IDLE;
+import static org.mule.runtime.api.config.PoolingProfile.DEFAULT_MAX_POOL_WAIT;
+import static org.mule.runtime.api.config.PoolingProfile.DEFAULT_POOL_EXHAUSTED_ACTION;
+import static org.mule.runtime.api.config.PoolingProfile.DEFAULT_POOL_INITIALISATION_POLICY;
+import static org.mule.runtime.api.config.PoolingProfile.POOL_EXHAUSTED_ACTIONS;
+import static org.mule.runtime.api.config.PoolingProfile.POOL_INITIALISATION_POLICIES;
 import static org.mule.runtime.config.spring.dsl.api.AttributeDefinition.Builder.fromChildCollectionConfiguration;
 import static org.mule.runtime.config.spring.dsl.api.AttributeDefinition.Builder.fromChildConfiguration;
 import static org.mule.runtime.config.spring.dsl.api.AttributeDefinition.Builder.fromFixedValue;
@@ -22,21 +29,25 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.mule.runtime.api.config.PoolingProfile;
 import org.mule.runtime.config.spring.MuleConfigurationConfigurator;
 import org.mule.runtime.config.spring.NotificationConfig;
 import org.mule.runtime.config.spring.ServerNotificationManagerConfigurator;
 import org.mule.runtime.config.spring.dsl.api.AttributeDefinition;
 import org.mule.runtime.config.spring.dsl.api.ComponentBuildingDefinition;
 import org.mule.runtime.config.spring.dsl.api.ComponentBuildingDefinitionProvider;
-import org.mule.runtime.config.spring.dsl.spring.ComponentObjectFactory;
-import org.mule.runtime.config.spring.dsl.api.ObjectFactory;
+import org.mule.runtime.config.spring.dsl.processor.ExplicitMethodEntryPointResolverObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.ExpressionArgumentObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.ExpressionTransformerObjectFactory;
-import org.mule.runtime.config.spring.dsl.processor.IgnoreObjectMethodsObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.MessageEnricherObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.MessageProcessorWrapperObjectFactory;
+import org.mule.runtime.config.spring.dsl.processor.MethodEntryPoint;
+import org.mule.runtime.config.spring.dsl.processor.NoArgumentsEntryPointResolverObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.RetryPolicyTemplateObjectFactory;
 import org.mule.runtime.config.spring.dsl.processor.TransformerObjectFactory;
+import org.mule.runtime.config.spring.dsl.spring.ComponentObjectFactory;
+import org.mule.runtime.config.spring.dsl.spring.ExcludeDefaultObjectMethods;
+import org.mule.runtime.config.spring.dsl.spring.PooledComponentObjectFactory;
 import org.mule.runtime.config.spring.factories.AsyncMessageProcessorsFactoryBean;
 import org.mule.runtime.config.spring.factories.ChoiceRouterFactoryBean;
 import org.mule.runtime.config.spring.factories.MessageProcessorChainFactoryBean;
@@ -50,6 +61,7 @@ import org.mule.runtime.config.spring.factories.WatermarkFactoryBean;
 import org.mule.runtime.config.spring.util.SpringBeanLookup;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.component.LifecycleAdapter;
+import org.mule.runtime.core.api.component.LifecycleAdapterFactory;
 import org.mule.runtime.core.api.config.ConfigurationExtension;
 import org.mule.runtime.core.api.config.MuleConfiguration;
 import org.mule.runtime.core.api.config.ThreadingProfile;
@@ -63,6 +75,11 @@ import org.mule.runtime.core.api.schedule.SchedulerFactory;
 import org.mule.runtime.core.api.source.MessageSource;
 import org.mule.runtime.core.api.transformer.Transformer;
 import org.mule.runtime.core.component.DefaultJavaComponent;
+import org.mule.runtime.core.component.PooledJavaComponent;
+import org.mule.runtime.core.component.simple.EchoComponent;
+import org.mule.runtime.core.component.simple.LogComponent;
+import org.mule.runtime.core.component.simple.NullComponent;
+import org.mule.runtime.core.component.simple.StaticComponent;
 import org.mule.runtime.core.construct.Flow;
 import org.mule.runtime.core.context.notification.ListenerSubscriptionPair;
 import org.mule.runtime.core.context.notification.ServerNotificationManager;
@@ -141,6 +158,7 @@ import org.mule.runtime.core.transformer.simple.RemovePropertyTransformer;
 import org.mule.runtime.core.transformer.simple.SerializableToByteArray;
 import org.mule.runtime.core.transformer.simple.SetPayloadMessageProcessor;
 import org.mule.runtime.core.transformer.simple.StringAppendTransformer;
+import org.mule.runtime.core.util.pool.LifecyleEnabledObjectPool;
 
 /**
  * {@link org.mule.runtime.config.spring.dsl.api.ComponentBuildingDefinition} definitions for the components provided by the core
@@ -500,13 +518,12 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
 
     componentBuildingDefinitions.addAll(getTransformersBuildingDefinitions());
     componentBuildingDefinitions.addAll(getEntryPointResolversDefinitions());
-    componentBuildingDefinitions.addAll(getComponentsDefintions());
+    componentBuildingDefinitions.addAll(getComponentsDefinitions());
 
     return componentBuildingDefinitions;
   }
 
-  private List<ComponentBuildingDefinition> getComponentsDefintions()
-  {
+  private List<ComponentBuildingDefinition> getComponentsDefinitions() {
     List<ComponentBuildingDefinition> buildingDefinitions = new ArrayList<>();
 
     buildingDefinitions.add(baseDefinition
@@ -514,64 +531,105 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withIdentifier("component")
         .withTypeDefinition(fromType(DefaultJavaComponent.class))
         .withObjectFactoryType(ComponentObjectFactory.class)
-            .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
-            .withSetterParameterDefinition("objectFactory", fromChildConfiguration(org.mule.runtime.core.api.object.ObjectFactory.class).build())
-            .withSetterParameterDefinition("entryPointResolverSet", fromChildConfiguration(EntryPointResolverSet.class).build())
-            .withSetterParameterDefinition("entryPointResolver", fromChildConfiguration(EntryPointResolver.class).build())
-            .withSetterParameterDefinition("singletonComponentLifecycleAdapter", fromChildConfiguration(LifecycleAdapter.class).build())
+        .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
+        .withSetterParameterDefinition("objectFactory",
+                                       fromChildConfiguration(org.mule.runtime.core.api.object.ObjectFactory.class).build())
+        .withSetterParameterDefinition("entryPointResolverSet", fromChildConfiguration(EntryPointResolverSet.class).build())
+        .withSetterParameterDefinition("entryPointResolver", fromChildConfiguration(EntryPointResolver.class).build())
+        .withSetterParameterDefinition("lifecycleAdapterFactory", fromChildConfiguration(LifecycleAdapterFactory.class).build())
         .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("pooled-component")
+        .withTypeDefinition(fromType(PooledJavaComponent.class))
+        .withObjectFactoryType(PooledComponentObjectFactory.class)
+        .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
+        .withSetterParameterDefinition("objectFactory",
+                                       fromChildConfiguration(org.mule.runtime.core.api.object.ObjectFactory.class).build())
+        .withSetterParameterDefinition("entryPointResolverSet", fromChildConfiguration(EntryPointResolverSet.class).build())
+        .withSetterParameterDefinition("entryPointResolver", fromChildConfiguration(EntryPointResolver.class).build())
+        .withSetterParameterDefinition("lifecycleAdapterFactory", fromChildConfiguration(LifecycleAdapterFactory.class).build())
+        .withSetterParameterDefinition("poolingProfile", fromChildConfiguration(PoolingProfile.class).build())
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("log-component")
+        .withTypeDefinition(fromType(LogComponent.class))
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("null-component")
+        .withTypeDefinition(fromType(NullComponent.class))
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("static-component")
+        .withTypeDefinition(fromType(DefaultJavaComponent.class))
+        .withObjectFactoryType(ComponentObjectFactory.class)
+        .withSetterParameterDefinition("usePrototypeObjectFactory", fromFixedValue(false).build())
+        .withSetterParameterDefinition("clazz", fromFixedValue(StaticComponent.class).build())
+        .withSetterParameterDefinition("staticData", fromChildConfiguration(String.class).build())
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("echo-component")
+        .withTypeDefinition(fromType(DefaultJavaComponent.class))
+        .withObjectFactoryType(ComponentObjectFactory.class)
+        .withSetterParameterDefinition("usePrototypeObjectFactory", fromFixedValue(false).build())
+        .withSetterParameterDefinition("clazz", fromFixedValue(EchoComponent.class).build())
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("pooling-profile")
+        .withTypeDefinition(fromType(PoolingProfile.class))
+        .withConstructorParameterDefinition(fromSimpleParameter("maxActive").withDefaultValue(DEFAULT_MAX_POOL_ACTIVE).build())
+        .withConstructorParameterDefinition(fromSimpleParameter("maxIdle").withDefaultValue(DEFAULT_MAX_POOL_IDLE).build())
+        .withConstructorParameterDefinition(fromSimpleParameter("maxWait", value -> Long.valueOf((String) value))
+            .withDefaultValue(DEFAULT_MAX_POOL_WAIT).build())
+        .withConstructorParameterDefinition(fromSimpleParameter("exhaustedAction", POOL_EXHAUSTED_ACTIONS::get)
+            .withDefaultValue(DEFAULT_POOL_EXHAUSTED_ACTION).build())
+        .withConstructorParameterDefinition(fromSimpleParameter("initialisationPolicy", POOL_INITIALISATION_POLICIES::get)
+            .withDefaultValue(DEFAULT_POOL_INITIALISATION_POLICY).build())
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("return-data")
+        .withTypeDefinition(fromType(String.class))
+        .build());
+
+
 
     buildingDefinitions.add(baseDefinition.copy()
         .withIdentifier("singleton-object")
         .withTypeDefinition(fromType(SingletonObjectFactory.class))
-        .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
-        .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
+        .withConstructorParameterDefinition(fromSimpleParameter("class").build())
         .build());
 
     buildingDefinitions.add(baseDefinition.copy()
-                                    .withIdentifier("prototype-object")
-                                    .withTypeDefinition(fromType(PrototypeObjectFactory.class))
-                                    .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
-                                    .withSetterParameterDefinition("clazz", fromSimpleParameter("class").build())
-                                    .build());
+        .withIdentifier("prototype-object")
+        .withTypeDefinition(fromType(PrototypeObjectFactory.class))
+        .withConstructorParameterDefinition(fromSimpleParameter("class").build())
+        .build());
 
     buildingDefinitions.add(baseDefinition.copy()
-                                    .withIdentifier("spring-object")
-                                    .withTypeDefinition(fromType(SpringBeanLookup.class))
-                                    .withSetterParameterDefinition("bean", fromSimpleParameter("bean").build())
-                                    .build());
+        .withIdentifier("spring-object")
+        .withTypeDefinition(fromType(SpringBeanLookup.class))
+        .withSetterParameterDefinition("bean", fromSimpleParameter("bean").build())
+        .build());
 
     buildingDefinitions.add(baseDefinition.copy()
-                                    .withIdentifier("custom-lifecycle-adapter-factory")
-                                    .withTypeDefinition(fromConfigurationAttribute(CLASS_ATTRIBUTE))
-                                    .build());
+        .withIdentifier("custom-lifecycle-adapter-factory")
+        .withTypeDefinition(fromConfigurationAttribute(CLASS_ATTRIBUTE))
+        .build());
 
     return buildingDefinitions;
-    
-    //registerBeanDefinitionParser("component", new ComponentDelegatingDefinitionParser(DefaultJavaComponent.class));
-    //registerBeanDefinitionParser("pooled-component", new ComponentDelegatingDefinitionParser(PooledJavaComponent.class));
-    //
-    //// Simple Components
-    //registerBeanDefinitionParser("log-component",
-    //                             new SimpleComponentDefinitionParser(SimpleCallableJavaComponent.class, LogComponent.class));
-    //registerBeanDefinitionParser("null-component",
-    //                             new SimpleComponentDefinitionParser(SimpleCallableJavaComponent.class, NullComponent.class));
-    //registerBeanDefinitionParser("static-component", new StaticComponentDefinitionParser());
-    //registerIgnoredElement("return-data"); // Handled by StaticComponentDefinitionParser
-    //
-    //// We need to use DefaultJavaComponent for the echo component because some tests invoke EchoComponent with method name and
-    //// therefore we need an entry point resolver
-    //registerBeanDefinitionParser("echo-component",
-    //                             new SimpleComponentDefinitionParser(DefaultJavaComponent.class, EchoComponent.class));
-    // Object Factories
-    //registerBeanDefinitionParser("singleton-object",
-    //                             new ObjectFactoryDefinitionParser(SingletonObjectFactory.class, "objectFactory"));
-    //registerBeanDefinitionParser("prototype-object",
-    //                             new ObjectFactoryDefinitionParser(PrototypeObjectFactory.class, "objectFactory"));
-    //registerBeanDefinitionParser("spring-object", new ObjectFactoryDefinitionParser(SpringBeanLookup.class, "objectFactory"));
-    //
-    //// Life-cycle Adapters Factories
-    //registerBeanDefinitionParser("custom-lifecycle-adapter-factory", new ChildDefinitionParser("lifecycleAdapterFactory"));
   }
 
   private List<ComponentBuildingDefinition> getEntryPointResolversDefinitions() {
@@ -602,17 +660,23 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .copy()
         .withIdentifier("method-entry-point-resolver")
         .withTypeDefinition(fromType(ExplicitMethodEntryPointResolver.class))
-        .withSetterParameterDefinition("methods", fromChildCollectionConfiguration(String.class).build())
+        .withObjectFactoryType(ExplicitMethodEntryPointResolverObjectFactory.class)
+        .withSetterParameterDefinition("methodEntryPoints", fromChildCollectionConfiguration(MethodEntryPoint.class).build())
+        .withSetterParameterDefinition("acceptVoidMethods", fromSimpleParameter("acceptVoidMethods").build())
         .build());
     buildingDefinitions.add(baseDefinition
         .copy()
         .withIdentifier("include-entry-point")
-        .withTypeDefinition(fromType(String.class))
+        .withTypeDefinition(fromType(MethodEntryPoint.class))
+        .withSetterParameterDefinition("enabled", fromFixedValue(true).build())
+        .withSetterParameterDefinition("method", fromSimpleParameter("method").build())
         .build());
     buildingDefinitions.add(baseDefinition
         .copy()
         .withIdentifier("exclude-entry-point")
-        .withTypeDefinition(fromType(String.class))
+        .withTypeDefinition(fromType(MethodEntryPoint.class))
+        .withSetterParameterDefinition("enabled", fromFixedValue(false).build())
+        .withSetterParameterDefinition("method", fromSimpleParameter("method").build())
         .build());
     buildingDefinitions.add(baseDefinition
         .copy()
@@ -638,13 +702,16 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
     buildingDefinitions.add(baseDefinition
         .copy()
         .withIdentifier("exclude-object-methods")
-        .withTypeDefinition(fromType(List.class))
-        .withObjectFactoryType(IgnoreObjectMethodsObjectFactory.class)
+        .withTypeDefinition(fromType(ExcludeDefaultObjectMethods.class))
         .build());
     buildingDefinitions.add(baseDefinition
         .copy()
         .withIdentifier("no-arguments-entry-point-resolver")
         .withTypeDefinition(fromType(NoArgumentsEntryPointResolver.class))
+        .withObjectFactoryType(NoArgumentsEntryPointResolverObjectFactory.class)
+        .withSetterParameterDefinition("excludeDefaultObjectMethods",
+                                       fromChildConfiguration(ExcludeDefaultObjectMethods.class).build())
+        .withSetterParameterDefinition("methodEntryPoints", fromChildCollectionConfiguration(MethodEntryPoint.class).build())
         .build());
     buildingDefinitions.add(baseDefinition
         .copy()

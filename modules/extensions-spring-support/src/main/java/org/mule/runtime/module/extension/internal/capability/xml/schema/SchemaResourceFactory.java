@@ -7,9 +7,12 @@
 package org.mule.runtime.module.extension.internal.capability.xml.schema;
 
 
+import org.mule.runtime.extension.api.ExtensionManager;
 import org.mule.runtime.extension.api.introspection.ExtensionModel;
-import org.mule.runtime.extension.xml.dsl.api.property.XmlModelProperty;
 import org.mule.runtime.extension.api.resources.GeneratedResource;
+import org.mule.runtime.extension.xml.dsl.api.property.XmlModelProperty;
+
+import javax.inject.Inject;
 
 /**
  * Implementation of {@link AbstractXmlResourceFactory} which generates the extension's XSD schema
@@ -18,12 +21,15 @@ import org.mule.runtime.extension.api.resources.GeneratedResource;
  */
 public class SchemaResourceFactory extends AbstractXmlResourceFactory {
 
+  @Inject
+  private ExtensionManager extensionManager;
+
   /**
    * {@inheritDoc}
    */
   @Override
   protected GeneratedResource generateXmlResource(ExtensionModel extensionModel, XmlModelProperty xmlModelProperty) {
-    String schema = new SchemaGenerator().generate(extensionModel, xmlModelProperty);
+    String schema = new SchemaGenerator().generate(extensionModel, xmlModelProperty, extensionManager);
     return new GeneratedResource(xmlModelProperty.getXsdFileName(), schema.getBytes());
   }
 }

@@ -269,6 +269,7 @@ public abstract class ExtensionDefinitionParser {
    */
   protected void parseMapParameters(String key, String name, DictionaryType dictionaryType, Object defaultValue,
                                     ExpressionSupport expressionSupport, boolean required, DslElementSyntax paramDsl) {
+
     parseAttributeParameter(key, name, dictionaryType, defaultValue, expressionSupport, required);
 
     Class<? extends Map> mapType = getType(dictionaryType);

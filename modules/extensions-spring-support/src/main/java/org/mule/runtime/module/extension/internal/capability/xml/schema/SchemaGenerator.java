@@ -10,6 +10,7 @@ import static org.mule.runtime.core.util.Preconditions.checkArgument;
 import static org.mule.runtime.core.util.Preconditions.checkState;
 import static org.mule.runtime.module.extension.internal.xml.SchemaConstants.MULE_NAMESPACE;
 import static org.mule.runtime.module.extension.internal.xml.SchemaConstants.MULE_PREFIX;
+import org.mule.runtime.extension.api.ExtensionManager;
 import org.mule.runtime.extension.api.introspection.ExtensionModel;
 import org.mule.runtime.extension.api.introspection.config.ConfigurationModel;
 import org.mule.runtime.extension.api.introspection.config.RuntimeConfigurationModel;
@@ -45,9 +46,9 @@ public class SchemaGenerator {
     checkState(!StringUtils.isBlank(xmlModelProperty.getNamespace()), "xml model property cannot provide a blank namespace");
   }
 
-  public String generate(ExtensionModel extensionModel, XmlModelProperty xmlModelProperty) {
+  public String generate(ExtensionModel extensionModel, XmlModelProperty xmlModelProperty, ExtensionManager extensionManager) {
     validate(extensionModel, xmlModelProperty);
-    SchemaBuilder schemaBuilder = SchemaBuilder.newSchema(extensionModel, xmlModelProperty);
+    SchemaBuilder schemaBuilder = SchemaBuilder.newSchema(extensionModel, xmlModelProperty, extensionManager);
 
     new IdempotentExtensionWalker() {
 

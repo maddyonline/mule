@@ -44,6 +44,7 @@ import org.mule.runtime.extension.api.util.SubTypesMappingContainer;
 import org.mule.runtime.extension.xml.dsl.api.DslElementSyntax;
 import org.mule.runtime.extension.xml.dsl.api.property.XmlModelProperty;
 import org.mule.runtime.extension.xml.dsl.api.resolver.DslSyntaxResolver;
+import org.mule.runtime.module.extension.internal.capability.xml.schema.builder.DefaultDslContext;
 import org.mule.runtime.module.extension.internal.config.ExtensionConfig;
 import org.mule.runtime.module.extension.internal.config.dsl.config.ConfigurationDefinitionParser;
 import org.mule.runtime.module.extension.internal.config.dsl.connection.ConnectionProviderDefinitionParser;
@@ -141,7 +142,7 @@ public class ExtensionBuildingDefinitionProvider implements ComponentBuildingDef
 
     final ExtensionParsingContext parsingContext = createParsingContext(extensionModel);
     final Builder definitionBuilder = new Builder().withNamespace(xmlModelProperty.get().getNamespace());
-    final DslSyntaxResolver dslSyntaxResolver = new DslSyntaxResolver(extensionModel);
+    final DslSyntaxResolver dslSyntaxResolver = new DslSyntaxResolver(extensionModel, new DefaultDslContext(extensionManager));
 
     final ClassLoader extensionClassLoader = getClassLoader(extensionModel);
     withContextClassLoader(extensionClassLoader, () -> {

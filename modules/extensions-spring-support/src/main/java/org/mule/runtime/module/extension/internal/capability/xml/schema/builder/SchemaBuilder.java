@@ -16,10 +16,8 @@ import static org.mule.runtime.extension.api.introspection.parameter.ExpressionS
 import static org.mule.runtime.extension.api.introspection.parameter.ExpressionSupport.SUPPORTED;
 import static org.mule.runtime.extension.api.util.NameUtils.hyphenize;
 import static org.mule.runtime.extension.api.util.NameUtils.sanitizeName;
-import static org.mule.runtime.extension.xml.dsl.api.XmlModelUtils.createXmlModelProperty;
 import static org.mule.runtime.module.extension.internal.ExtensionProperties.THREADING_PROFILE_ATTRIBUTE_NAME;
 import static org.mule.runtime.module.extension.internal.ExtensionProperties.TLS_ATTRIBUTE_NAME;
-import static org.mule.runtime.module.extension.internal.util.IntrospectionUtils.getAnnotation;
 import static org.mule.runtime.module.extension.internal.util.MetadataTypeUtils.getId;
 import static org.mule.runtime.module.extension.internal.xml.SchemaConstants.ATTRIBUTE_NAME_VALUE;
 import static org.mule.runtime.module.extension.internal.xml.SchemaConstants.CONFIG_ATTRIBUTE;
@@ -56,9 +54,8 @@ import org.mule.runtime.core.api.NestedProcessor;
 import org.mule.runtime.core.api.config.ThreadingProfile;
 import org.mule.runtime.core.util.StringUtils;
 import org.mule.runtime.core.util.ValueHolder;
+import org.mule.runtime.extension.api.ExtensionManager;
 import org.mule.runtime.extension.api.annotation.Extensible;
-import org.mule.runtime.extension.api.annotation.Extension;
-import org.mule.runtime.extension.api.annotation.dsl.xml.Xml;
 import org.mule.runtime.extension.api.connectivity.OperationTransactionalAction;
 import org.mule.runtime.extension.api.introspection.ExtensionModel;
 import org.mule.runtime.extension.api.introspection.config.RuntimeConfigurationModel;
@@ -144,18 +141,25 @@ public final class SchemaBuilder {
 
   private DslSyntaxResolver dslResolver;
   private SubTypesMappingContainer subTypesMapping;
-  private Map<MetadataType, MetadataType> importedTypes;
+  private Map<MetadataType, String> importedTypes;
+  private ExtensionManager extensionManager;
 
-  public static SchemaBuilder newSchema(ExtensionModel extensionModel, XmlModelProperty xmlModelProperty) {
+  public static SchemaBuilder newSchema(ExtensionModel extensionModel, XmlModelProperty xmlModelProperty,
+                                        ExtensionManager extensionManager) {
+
     SchemaBuilder builder = new SchemaBuilder();
     builder.schema = new Schema();
     builder.schema.setTargetNamespace(xmlModelProperty.getNamespaceUri());
     builder.schema.setElementFormDefault(FormChoice.QUALIFIED);
     builder.schema.setAttributeFormDefault(FormChoice.UNQUALIFIED);
-    builder.withDslSyntaxResolver(new DslSyntaxResolver(extensionModel)).importXmlNamespace().importSpringFrameworkNamespace()
-        .importMuleNamespace().importMuleExtensionNamespace();
+    builder.withExtensionManager(extensionManager)
+        .withDslSyntaxResolver(new DslSyntaxResolver(extensionModel, new DefaultDslContext(extensionManager)))
+        .importXmlNamespace()
+        .importSpringFrameworkNamespace()
+        .importMuleNamespace()
+        .importMuleExtensionNamespace();
 
-    Optional<Map<MetadataType, MetadataType>> importedTypes =
+    Optional<Map<MetadataType, String>> importedTypes =
         extensionModel.getModelProperty(ImportedTypesModelProperty.class).map(ImportedTypesModelProperty::getImportedTypes);
     builder.withImportedTypes(importedTypes.orElse(ImmutableMap.of()));
 
@@ -167,6 +171,11 @@ public final class SchemaBuilder {
     return builder;
   }
 
+  private SchemaBuilder withExtensionManager(ExtensionManager extensionManager) {
+    this.extensionManager = extensionManager;
+    return this;
+  }
+
   private SchemaBuilder withDslSyntaxResolver(DslSyntaxResolver dslSyntaxResolver) {
     this.dslResolver = dslSyntaxResolver;
     return this;
@@ -175,13 +184,13 @@ public final class SchemaBuilder {
   private SchemaBuilder withTypeMapping(Map<MetadataType, List<MetadataType>> subTypesMapping) {
     this.subTypesMapping = new SubTypesMappingContainer(subTypesMapping);
     subTypesMapping.forEach(objectTypeDelegate::registerPojoSubtypes);
-
     return this;
   }
 
-  private SchemaBuilder withImportedTypes(Map<MetadataType, MetadataType> importedTypes) {
+  private SchemaBuilder withImportedTypes(Map<MetadataType, String> importedTypes) {
     this.importedTypes = importedTypes;
-    importedTypes.values().forEach(ext -> registerExtensionImport(getType(ext)));
+    importedTypes.values().forEach(origin -> extensionManager.getExtension(origin)
+        .ifPresent(this::registerExtensionImport));
     return this;
   }
 
@@ -195,7 +204,7 @@ public final class SchemaBuilder {
     return subTypesMapping;
   }
 
-  Map<MetadataType, MetadataType> getImportedTypes() {
+  Map<MetadataType, String> getImportedTypes() {
     return importedTypes;
   }
 
@@ -582,17 +591,18 @@ public final class SchemaBuilder {
     };
   }
 
-  private XmlModelProperty registerExtensionImport(Class<?> extensionType) {
-    XmlModelProperty importedExtensionXml =
-        createXmlModelProperty(getAnnotation(extensionType, Xml.class), getAnnotation(extensionType, Extension.class).name(), "");
-
+  private XmlModelProperty registerExtensionImport(ExtensionModel extension) {
+    XmlModelProperty importXml = extension.getModelProperty(XmlModelProperty.class)
+        .orElseThrow(() -> new IllegalArgumentException(format("The Extension [%s] doesn't have the required model property [%s]",
+                                                               extension, XmlModelProperty.NAME)));
     Import schemaImport = new Import();
-    schemaImport.setNamespace(importedExtensionXml.getNamespaceUri());
-    schemaImport.setSchemaLocation(importedExtensionXml.getSchemaLocation());
+    schemaImport.setNamespace(importXml.getNamespaceUri());
+    schemaImport.setSchemaLocation(importXml.getSchemaLocation());
     if (!schema.getIncludeOrImportOrRedefine().contains(schemaImport)) {
       schema.getIncludeOrImportOrRedefine().add(schemaImport);
     }
-    return importedExtensionXml;
+
+    return importXml;
   }
 
   private boolean isOperation(MetadataType type) {

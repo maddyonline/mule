@@ -6,7 +6,8 @@
  */
 package org.mule.runtime.config.spring.dsl.spring;
 
-import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.PROPERTIES_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.MULE_PROPERTY_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.MULE_PROPERTIES_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_ENTRY_IDENTIFIER;
 
 import java.util.HashMap;
@@ -25,26 +26,46 @@ public class PropertiesMapBeanDefinitionCreator extends BeanDefinitionCreator {
     if (componentModel.getIdentifier().equals(SPRING_ENTRY_IDENTIFIER)) {
       return true;
     }
-    if (!componentModel.getIdentifier().equals(PROPERTIES_IDENTIFIER)) {
-      return false;
+    if (componentModel.getIdentifier().equals(MULE_PROPERTIES_IDENTIFIER)
+        || componentModel.getIdentifier().equals(MULE_PROPERTY_IDENTIFIER)) {
+      ManagedMap<Object, Object> managedMap = new ManagedMap<>();
+      BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(HashMap.class);
+      if (componentModel.getIdentifier().equals(MULE_PROPERTIES_IDENTIFIER)) {
+        for (ComponentModel innerComponent : componentModel.getInnerComponents()) {
+          processAndAddMapProperty(innerComponent, managedMap);
+        }
+      } else {
+        processAndAddMapProperty(componentModel, managedMap);
+      }
+      componentModel.setBeanDefinition(beanDefinitionBuilder
+          .addConstructorArgValue(managedMap)
+          .getBeanDefinition());
+      return true;
     }
-    ManagedMap<Object, Object> managedMap = new ManagedMap<>();
-    BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(HashMap.class);
-    for (ComponentModel innerComponent : componentModel.getInnerComponents()) {
-      Object key = resolveValue(innerComponent.getParameters().get("key"), innerComponent.getParameters().get("key-ref"));
-      Object value = resolveValue(innerComponent.getParameters().get("value"), innerComponent.getParameters().get("value-ref"));
-      managedMap.put(key, value);
+    return false;
+  }
+
+  private void processAndAddMapProperty(ComponentModel componentModel, ManagedMap<Object, Object> managedMap) {
+    Object key = resolveValue(componentModel.getParameters().get("key"), componentModel.getParameters().get("key-ref"));
+    Object value = resolveValue(componentModel.getParameters().get("value"), componentModel.getParameters().get("value-ref"));
+    if (value == null) {
+      value = resolveValueFromChild(componentModel.getInnerComponents().get(0));
     }
-    componentModel.setBeanDefinition(beanDefinitionBuilder
-        .addConstructorArgValue(managedMap)
-        .getBeanDefinition());
-    return true;
+    managedMap.put(key, value);
+  }
+
+  private Object resolveValueFromChild(ComponentModel componentModel) {
+    if (componentModel.getIdentifier().equals("list")) {
+      return null;
+    } else {
+      return null;
+    }
   }
 
   private Object resolveValue(String value, String reference) {
-    if (value != null) {
-      return value;
+    if (reference != null) {
+      return new RuntimeBeanReference(reference);
     }
-    return new RuntimeBeanReference(reference);
+    return value;
   }
 }

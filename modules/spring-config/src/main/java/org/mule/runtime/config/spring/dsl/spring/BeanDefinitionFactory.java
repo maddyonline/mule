@@ -13,10 +13,13 @@ import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.CONFIGUR
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.DESCRIPTION_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.DOC_DESCRIPTION_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.MULE_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.MULE_PROPERTY_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.NAME_ATTRIBUTE;
-import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.PROPERTIES_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.MULE_PROPERTIES_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.QUEUE_STORE;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_ENTRY_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_LIST_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_MAP_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.processor.xml.CoreXmlNamespaceInfoProvider.CORE_NAMESPACE_NAME;
 import static org.mule.runtime.config.spring.dsl.processor.xml.XmlCustomAttributeHandler.from;
 import static org.mule.runtime.config.spring.dsl.spring.CommonBeanDefinitionCreator.adaptFilterBeanDefinitions;
@@ -81,8 +84,11 @@ public class BeanDefinitionFactory {
    */
   private final ImmutableSet<ComponentIdentifier> customBuildersComponentIdentifiers = ImmutableSet.<ComponentIdentifier>builder()
       .add(new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(QUEUE_STORE).build())
-      .add(PROPERTIES_IDENTIFIER)
+      .add(MULE_PROPERTIES_IDENTIFIER)
+      .add(MULE_PROPERTY_IDENTIFIER)
       .add(SPRING_ENTRY_IDENTIFIER)
+      .add(SPRING_LIST_IDENTIFIER)
+      .add(SPRING_MAP_IDENTIFIER)
       .build();
 
 

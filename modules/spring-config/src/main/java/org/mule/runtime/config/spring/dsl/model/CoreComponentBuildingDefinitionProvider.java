@@ -30,6 +30,8 @@ import static org.mule.runtime.config.spring.dsl.api.CommonTypeConverters.string
 import static org.mule.runtime.config.spring.dsl.api.KeyAttributeDefinitionPair.newBuilder;
 import static org.mule.runtime.config.spring.dsl.api.TypeDefinition.fromConfigurationAttribute;
 import static org.mule.runtime.config.spring.dsl.api.TypeDefinition.fromType;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.PROTOTYPE_OBJECT_ELEMENT;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SINGLETON_OBJECT_ELEMENT;
 import static org.mule.runtime.config.spring.dsl.processor.xml.CoreXmlNamespaceInfoProvider.CORE_NAMESPACE_NAME;
 import static org.mule.runtime.core.config.i18n.MessageFactory.createStaticMessage;
 import static org.mule.runtime.core.retry.policies.SimpleRetryPolicyTemplate.RETRY_COUNT_FOREVER;
@@ -994,14 +996,14 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
 
 
     buildingDefinitions.add(baseDefinition.copy()
-        .withIdentifier("singleton-object")
+        .withIdentifier(SINGLETON_OBJECT_ELEMENT)
         .withTypeDefinition(fromType(SingletonObjectFactory.class))
         .withConstructorParameterDefinition(fromSimpleParameter("class").build())
         .withConstructorParameterDefinition(fromChildConfiguration(Map.class).withDefaultValue(new HashMap<>()).build())
         .build());
 
     buildingDefinitions.add(baseDefinition.copy()
-        .withIdentifier("prototype-object")
+        .withIdentifier(PROTOTYPE_OBJECT_ELEMENT)
         .withTypeDefinition(fromType(PrototypeObjectFactory.class))
         .withConstructorParameterDefinition(fromSimpleParameter("class").build())
         .withConstructorParameterDefinition(fromChildConfiguration(Map.class).withDefaultValue(new HashMap<>()).build())

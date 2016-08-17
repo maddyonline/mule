@@ -9,6 +9,7 @@ package org.mule.runtime.config.spring.dsl.spring;
 import static org.mule.runtime.core.config.i18n.MessageFactory.createStaticMessage;
 
 import org.mule.runtime.config.spring.dsl.api.ObjectFactory;
+import org.mule.runtime.core.AbstractAnnotatedObject;
 import org.mule.runtime.core.api.MuleRuntimeException;
 import org.mule.runtime.core.api.component.Component;
 import org.mule.runtime.core.api.component.LifecycleAdapterFactory;
@@ -28,7 +29,7 @@ import java.util.Map;
  *
  * @since 4.0
  */
-public class ComponentObjectFactory implements ObjectFactory<Component> {
+public class ComponentObjectFactory extends AbstractAnnotatedObject implements ObjectFactory<Component> {
 
   private Class clazz;
   private org.mule.runtime.core.api.object.ObjectFactory objectFactory;
@@ -66,6 +67,7 @@ public class ComponentObjectFactory implements ObjectFactory<Component> {
     if (lifecycleAdapterFactory != null) {
       component.setLifecycleAdapterFactory(lifecycleAdapterFactory);
     }
+    component.setAnnotations(this.getAnnotations());
     return component;
   }
 

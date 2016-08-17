@@ -10,11 +10,15 @@ import org.mule.runtime.api.config.PoolingProfile;
 import org.mule.runtime.config.spring.dsl.api.ObjectFactory;
 import org.mule.runtime.core.api.component.Component;
 import org.mule.runtime.core.api.component.LifecycleAdapterFactory;
+import org.mule.runtime.core.api.interceptor.Interceptor;
 import org.mule.runtime.core.api.model.EntryPointResolver;
 import org.mule.runtime.core.api.model.EntryPointResolverSet;
 import org.mule.runtime.core.component.PooledJavaComponent;
 import org.mule.runtime.core.model.resolvers.DefaultEntryPointResolverSet;
 import org.mule.runtime.core.object.PrototypeObjectFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * {@link ObjectFactory} for {@link PooledJavaComponent} objects.
@@ -29,6 +33,7 @@ public class PooledComponentObjectFactory implements ObjectFactory<Component> {
   private EntryPointResolver entryPointResolver;
   private PoolingProfile poolingProfile = new PoolingProfile();
   private LifecycleAdapterFactory lifecycleAdapterFactory;
+  private List<Interceptor> interceptors = new ArrayList<>();
 
   @Override
   public Component getObject() throws Exception {
@@ -39,12 +44,19 @@ public class PooledComponentObjectFactory implements ObjectFactory<Component> {
       entryPointResolverSet = new DefaultEntryPointResolverSet();
       entryPointResolverSet.addEntryPointResolver(entryPointResolver);
     }
+    PooledJavaComponent pooledJavaComponent;
     if (objectFactory != null) {
-      PooledJavaComponent pooledJavaComponent = new PooledJavaComponent(objectFactory, poolingProfile, entryPointResolverSet);
+      pooledJavaComponent = new PooledJavaComponent(objectFactory, poolingProfile, entryPointResolverSet);
       pooledJavaComponent.setLifecycleAdapterFactory(lifecycleAdapterFactory);
-      return pooledJavaComponent;
+    } else {
+      pooledJavaComponent = new PooledJavaComponent();
     }
-    return new PooledJavaComponent();
+    pooledJavaComponent.setInterceptors(interceptors);
+    return pooledJavaComponent;
+  }
+
+  public void setInterceptors(List<Interceptor> interceptors) {
+    this.interceptors = interceptors;
   }
 
   public void setClazz(Class clazz) {

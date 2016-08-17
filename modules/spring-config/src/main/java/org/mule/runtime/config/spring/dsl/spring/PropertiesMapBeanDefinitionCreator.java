@@ -9,6 +9,9 @@ package org.mule.runtime.config.spring.dsl.spring;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.MULE_PROPERTY_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.MULE_PROPERTIES_IDENTIFIER;
 import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_ENTRY_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_LIST_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_MAP_IDENTIFIER;
+import static org.mule.runtime.config.spring.dsl.model.ApplicationModel.SPRING_VALUE_IDENTIFIER;
 
 import java.util.HashMap;
 
@@ -16,6 +19,7 @@ import org.mule.runtime.config.spring.dsl.model.ComponentModel;
 
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.support.ManagedMap;
 
 public class PropertiesMapBeanDefinitionCreator extends BeanDefinitionCreator {
@@ -23,26 +27,37 @@ public class PropertiesMapBeanDefinitionCreator extends BeanDefinitionCreator {
   @Override
   boolean handleRequest(CreateBeanDefinitionRequest createBeanDefinitionRequest) {
     ComponentModel componentModel = createBeanDefinitionRequest.getComponentModel();
-    if (componentModel.getIdentifier().equals(SPRING_ENTRY_IDENTIFIER)) {
+    if (componentModel.getIdentifier().equals(SPRING_ENTRY_IDENTIFIER)
+        || componentModel.getIdentifier().equals(SPRING_LIST_IDENTIFIER)
+        || componentModel.getIdentifier().equals(SPRING_MAP_IDENTIFIER)
+        || componentModel.getIdentifier().equals(SPRING_VALUE_IDENTIFIER)) {
       return true;
     }
     if (componentModel.getIdentifier().equals(MULE_PROPERTIES_IDENTIFIER)
         || componentModel.getIdentifier().equals(MULE_PROPERTY_IDENTIFIER)) {
-      ManagedMap<Object, Object> managedMap = new ManagedMap<>();
-      BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(HashMap.class);
+      ManagedMap<Object, Object> managedMap;
       if (componentModel.getIdentifier().equals(MULE_PROPERTIES_IDENTIFIER)) {
-        for (ComponentModel innerComponent : componentModel.getInnerComponents()) {
-          processAndAddMapProperty(innerComponent, managedMap);
-        }
+        managedMap = createManagedMapFromEntries(componentModel);
       } else {
+        managedMap = new ManagedMap<>();
         processAndAddMapProperty(componentModel, managedMap);
       }
+      BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.rootBeanDefinition(HashMap.class);
       componentModel.setBeanDefinition(beanDefinitionBuilder
           .addConstructorArgValue(managedMap)
           .getBeanDefinition());
       return true;
     }
     return false;
+  }
+
+  private ManagedMap<Object, Object> createManagedMapFromEntries(ComponentModel componentModel) {
+    ManagedMap<Object, Object> managedMap;
+    managedMap = new ManagedMap<>();
+    for (ComponentModel innerComponent : componentModel.getInnerComponents()) {
+      processAndAddMapProperty(innerComponent, managedMap);
+    }
+    return managedMap;
   }
 
   private void processAndAddMapProperty(ComponentModel componentModel, ManagedMap<Object, Object> managedMap) {
@@ -55,11 +70,23 @@ public class PropertiesMapBeanDefinitionCreator extends BeanDefinitionCreator {
   }
 
   private Object resolveValueFromChild(ComponentModel componentModel) {
-    if (componentModel.getIdentifier().equals("list")) {
-      return null;
+    if (componentModel.getIdentifier().getName().equals("map")) {
+      return createManagedMapFromEntries(componentModel);
     } else {
-      return null;
+      return createManagedListFromItems(componentModel);
     }
+  }
+
+  private Object createManagedListFromItems(ComponentModel componentModel) {
+    ManagedList<Object> managedList = new ManagedList<>();
+    componentModel.getInnerComponents().forEach(childComponent -> {
+      if (childComponent.getIdentifier().getName().equals("value")) {
+        managedList.add(childComponent.getTextContent());
+      } else {
+        managedList.add(new RuntimeBeanReference(childComponent.getParameters().get("bean")));
+      }
+    });
+    return managedList;
   }
 
   private Object resolveValue(String value, String reference) {

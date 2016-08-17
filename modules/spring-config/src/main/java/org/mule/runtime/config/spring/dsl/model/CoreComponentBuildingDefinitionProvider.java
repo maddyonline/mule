@@ -77,6 +77,7 @@ import org.mule.runtime.core.api.config.ConfigurationExtension;
 import org.mule.runtime.core.api.config.MuleConfiguration;
 import org.mule.runtime.core.api.config.ThreadingProfile;
 import org.mule.runtime.core.api.exception.MessagingExceptionHandler;
+import org.mule.runtime.core.api.interceptor.Interceptor;
 import org.mule.runtime.core.api.model.EntryPointResolver;
 import org.mule.runtime.core.api.model.EntryPointResolverSet;
 import org.mule.runtime.core.api.object.ObjectFactory;
@@ -106,6 +107,8 @@ import org.mule.runtime.core.expression.transformers.AbstractExpressionTransform
 import org.mule.runtime.core.expression.transformers.BeanBuilderTransformer;
 import org.mule.runtime.core.expression.transformers.ExpressionArgument;
 import org.mule.runtime.core.expression.transformers.ExpressionTransformer;
+import org.mule.runtime.core.interceptor.LoggingInterceptor;
+import org.mule.runtime.core.interceptor.TimerInterceptor;
 import org.mule.runtime.core.model.resolvers.ArrayEntryPointResolver;
 import org.mule.runtime.core.model.resolvers.CallableEntryPointResolver;
 import org.mule.runtime.core.model.resolvers.DefaultEntryPointResolverSet;
@@ -925,6 +928,7 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withSetterParameterDefinition("entryPointResolverSet", fromChildConfiguration(EntryPointResolverSet.class).build())
         .withSetterParameterDefinition("entryPointResolver", fromChildConfiguration(EntryPointResolver.class).build())
         .withSetterParameterDefinition("lifecycleAdapterFactory", fromChildConfiguration(LifecycleAdapterFactory.class).build())
+        .withSetterParameterDefinition("interceptors", fromChildCollectionConfiguration(Interceptor.class).build())
         .build());
 
     buildingDefinitions.add(baseDefinition
@@ -939,6 +943,25 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withSetterParameterDefinition("entryPointResolver", fromChildConfiguration(EntryPointResolver.class).build())
         .withSetterParameterDefinition("lifecycleAdapterFactory", fromChildConfiguration(LifecycleAdapterFactory.class).build())
         .withSetterParameterDefinition("poolingProfile", fromChildConfiguration(PoolingProfile.class).build())
+        .withSetterParameterDefinition("interceptors", fromChildCollectionConfiguration(Interceptor.class).build())
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("custom-interceptor")
+        .withTypeDefinition(fromConfigurationAttribute(CLASS_ATTRIBUTE))
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("timer-interceptor")
+        .withTypeDefinition(fromType(TimerInterceptor.class))
+        .build());
+
+    buildingDefinitions.add(baseDefinition
+        .copy()
+        .withIdentifier("logging-interceptor")
+        .withTypeDefinition(fromType(LoggingInterceptor.class))
         .build());
 
     buildingDefinitions.add(baseDefinition

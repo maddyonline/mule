@@ -115,8 +115,10 @@ public class ApplicationModel {
   public static final String SPRING_ENTRY_ELEMENT = "entry";
   public static final String SPRING_LIST_ELEMENT = "list";
   public static final String SPRING_MAP_ELEMENT = "map";
+  public static final String SPRING_VALUE_ELEMENT = "value";
   public static final String PROTOTYPE_OBJECT_ELEMENT = "prototype-object";
   public static final String SINGLETON_OBJECT_ELEMENT = "singleton-object";
+  public static final String INTERCEPTOR_STACK_ELEMENT = "interceptor-stack";
 
   public static final ComponentIdentifier CHOICE_EXCEPTION_STRATEGY_IDENTIFIER =
       new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(CHOICE_EXCEPTION_STRATEGY).build();
@@ -162,10 +164,14 @@ public class ApplicationModel {
       new ComponentIdentifier.Builder().withNamespace(SPRING_NAMESPACE).withName(SPRING_LIST_ELEMENT).build();
   public static final ComponentIdentifier SPRING_MAP_IDENTIFIER =
       new ComponentIdentifier.Builder().withNamespace(SPRING_NAMESPACE).withName(SPRING_MAP_ELEMENT).build();
+  public static final ComponentIdentifier SPRING_VALUE_IDENTIFIER =
+      new ComponentIdentifier.Builder().withNamespace(SPRING_NAMESPACE).withName(SPRING_VALUE_ELEMENT).build();
   public static final ComponentIdentifier PROTOTYPE_OBJECT_IDENTIFIER =
       new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(PROTOTYPE_OBJECT_ELEMENT).build();
   public static final ComponentIdentifier SINGLETON_OBJECT_IDENTIFIER =
       new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(SINGLETON_OBJECT_ELEMENT).build();
+  public static final ComponentIdentifier INTERCEPTOR_STACK_IDENTIFIER =
+      new ComponentIdentifier.Builder().withNamespace(CORE_NAMESPACE_NAME).withName(INTERCEPTOR_STACK_ELEMENT).build();
 
   private static ImmutableSet<ComponentIdentifier> ignoredNameValidationComponentList =
       ImmutableSet.<ComponentIdentifier>builder()
